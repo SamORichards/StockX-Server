@@ -47,7 +47,7 @@
     <Compile Include="MatchMaker.cs" />
     <Compile Include="NetworkHandler.cs" />
     <Compile Include="Pool.cs" />
-    <Compile Include="PricingSystem.cs" />
+    <Compile Include="StockTicker.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
