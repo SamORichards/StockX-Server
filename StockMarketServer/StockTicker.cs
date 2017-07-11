@@ -14,16 +14,8 @@ namespace StockMarketServer {
                 stocks.Add(new Stock((string)reader["StockName"], (double)reader["CurrentPrice"]));
             }
             foreach (Stock s in stocks) {
-                int NumberOfBids = 0;
-                int NumberOfOffers = 0;
-                MySqlDataReader r = DataBaseHandler.GetData("SELECT Type, Quantity FROM Pool WHERE StockName = " + s.StockName);
-                while (r.Read()) {
-                    if ((int)r["Type"] == 0) {
-                        NumberOfBids += (int)r["Quantity"];
-                    } else {
-                        NumberOfOffers += (int)r["Quantity"];
-                    }
-                }
+                int NumberOfBids = DataBaseHandler.GetCountint("SELECT SUM(Quantity) FROM Pool WHERE Type = 0 AND StockName = " + s.StockName);
+                int NumberOfOffers = DataBaseHandler.GetCountint("SELECT SUM(Quantity) FROM Pool WHERE Type = 1 AND StockName = " + s.StockName);
                 long StocksInCirculation = DataBaseHandler.GetCount("SELECT COUNT(*) FROM StocksInCirculation WHERE StockName = " + s.StockName);
                 UpdateStockPrice(s.StockName, s.StartingPrice, NumberOfBids, NumberOfOffers, StocksInCirculation);
             }

@@ -33,11 +33,29 @@ namespace StockMarketServer {
             return null;
         }
 
+
+        public static void SetData(string command) {
+            MySqlCommand com = new MySqlCommand(command, sqlCon);
+            for (int i = 0; i < 10; i++) {
+                try {
+                    com.ExecuteNonQuery();
+                } catch {
+                    if (i == 9) {
+                        try {
+                            sqlCon.Close();
+                        } catch { }
+                        OpenConnection();
+                        i = 0;
+                    }
+                }
+            }
+        }
+
         public static long GetCount(string command) {
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             for (int i = 0; i < 10; i++) {
                 try {
-                    long t = (long )com.ExecuteScalar();
+                    long t = (long)com.ExecuteScalar();
                     return t;
                 } catch {
                     if (i == 9) {
@@ -70,6 +88,7 @@ namespace StockMarketServer {
             }
             return 0;
         }
+
 
         private static void OpenConnection() {
             for (int i = 0; i < 10; i++) {
