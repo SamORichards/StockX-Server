@@ -14,79 +14,75 @@ namespace StockMarketServer {
         }
 
         public static MySqlDataReader GetData(string command) {
+            ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             MySqlDataReader reader;
-            for (int i = 0; i < 10; i++) {
-                try {
-                    reader = com.ExecuteReader();
-                    return reader;
-                } catch {
-                    if (i == 9) {
-                        try {
-                            sqlCon.Close();
-                        } catch { }
-                        OpenConnection();
-                        i = 0;
-                    }
-                }
-            }
+            //for (int i = 0; i < 10; i++) {
+                //try {
+                reader = com.ExecuteReader();
+                return reader;
+                //} 
+                //catch {
+                //    if (i == 9) {
+                //        try {
+                //            sqlCon.Close();
+                //        } catch { }
+                //        OpenConnection();
+                //        i = 0;
+                //    }
+                //}
+            //}
             return null;
         }
 
 
         public static void SetData(string command) {
+            ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
-            for (int i = 0; i < 10; i++) {
-                try {
-                    com.ExecuteNonQuery();
-                } catch {
-                    if (i == 9) {
-                        try {
-                            sqlCon.Close();
-                        } catch { }
-                        OpenConnection();
-                        i = 0;
-                    }
-                }
-            }
+            //for (int i = 0; i < 10; i++) {
+                //try {
+                com.ExecuteNonQuery();
+                //    } catch {
+                //        if (i == 9) {
+                //            try {
+                //                sqlCon.Close();
+                //            } catch { }
+                //            OpenConnection();
+                //            i = 0;
+                //        }
+                //    }
+            //}
         }
 
-        public static long GetCount(string command) {
+        public static int GetCount(string command) {
+            ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
-            for (int i = 0; i < 10; i++) {
-                try {
-                    long t = (long)com.ExecuteScalar();
-                    return t;
-                } catch {
-                    if (i == 9) {
-                        try {
-                            sqlCon.Close();
-                        } catch { }
-                        OpenConnection();
-                        i = 0;
-                    }
+            //for (int i = 0; i < 10; i++) {
+                //try {
+                string t = com.ExecuteScalar().ToString();
+                if (t.Length == 0) {
+                    return 0;
+                } else {
+                    return int.Parse(t);
                 }
-            }
-            return 0;
+                //    } catch {
+                //        if (i == 9) {
+                //            try {
+                //                sqlCon.Close();
+                //            } catch { }
+                //            OpenConnection();
+                //            i = 0;
+                //        }
+                //    }
+            //}
         }
 
-        public static int GetCountint(string command) {
-            MySqlCommand com = new MySqlCommand(command, sqlCon);
-            for (int i = 0; i < 10; i++) {
-                try {
-                    int t = (int)com.ExecuteScalar();
-                    return t;
-                } catch {
-                    if (i == 9) {
-                        try {
-                            sqlCon.Close();
-                        } catch { }
-                        OpenConnection();
-                        i = 0;
-                    }
-                }
-            }
-            return 0;
+
+        static void ReadyConnection() {
+            try {
+                sqlCon.Close();
+            } catch { }
+            StartServer();
         }
 
 

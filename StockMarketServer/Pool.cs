@@ -6,5 +6,9 @@ using System.Threading.Tasks;
 
 namespace StockMarketServer {
     class Pool {
+        public static void RunPool() {
+            MatchMaker.RunMatchMaker();
+            DataBaseHandler.SetData("UPDATE Pool SET TurnsInPool = TurnsInPool + 1");
+        }
     }
 }

@@ -22,7 +22,7 @@ namespace StockMarketServer {
                 if (BidPriceLevels.Count == 0) {
                     continue;
                 }
-                MySqlDataReader OfferPoolReader = DataBaseHandler.GetData("SELECT DISTINCT Price FROM Pool WHERE Type = 1 AND StockName = '" + s + "' ORDER BY Price DSC");
+                MySqlDataReader OfferPoolReader = DataBaseHandler.GetData("SELECT DISTINCT Price FROM Pool WHERE Type = 1 AND StockName = '" + s + "' ORDER BY Price DESC");
                 List<double> OfferPriceLevels = new List<double>();
                 while (OfferPoolReader.Read()) {
                     OfferPriceLevels.Add((double)BidPoolReader["Price"]);
@@ -46,7 +46,19 @@ namespace StockMarketServer {
                             while (bids.Count != 0 && offers.Count != 0) {
                                 BidsAndOffers b = bids[0];
                                 LMMRound(ref b, ref offers);
-
+                                ProRataWithLMM(ref b, ref offers, 5);
+                                FIFO(ref b, ref offers);
+                                bids[0] = b;
+                                if (bids[0].Quantity <= 0) {
+                                    TradeManager.RemoveFromPool(bids[0]);
+                                    bids.RemoveAt(0);
+                                }
+                                foreach (BidsAndOffers o in offers) {
+                                    if (o.Quantity <= 0) {
+                                        TradeManager.RemoveFromPool(o);
+                                    }
+                                }
+                                offers.RemoveAll((o) => o.Quantity <= 0);
                             }
                         }
                     }
@@ -54,27 +66,64 @@ namespace StockMarketServer {
             }
         }
 
-        private static void LMMRound(ref BidsAndOffers b, ref List<BidsAndOffers> offers) {
-            for (int i = 0; i < offers.Count; i++) {
-                double LMMPercentage = (double) DataBaseHandler.GetData("SELECT LMM FROM Users WHERE ID = " + offers[i].User)["LMM"];
+
+
+        private static void LMMRound(ref BidsAndOffers Bid, ref List<BidsAndOffers> Offers) {
+            for (int i = 0; i < Offers.Count; i++) {
+                double LMMPercentage = (double) DataBaseHandler.GetData("SELECT LMM FROM Users WHERE ID = " + Offers[i].User)["LMM"];
                 if (LMMPercentage > 0f) {
-                    int LMMAmount = (int)(b.Quantity * LMMPercentage);
-                    if (LMMAmount > offers[i].Quantity) {
-                        BidsAndOffers offer = offers[i];
-                        TradeManager.CreateTrade(ref b, ref offer, offer.Quantity);
-                        offers[i] = offer;
+                    int LMMAmount = (int)(Bid.Quantity * LMMPercentage);
+                    if (LMMAmount > Offers[i].Quantity) {
+                        BidsAndOffers Offer = Offers[i];
+                        TradeManager.CreateTrade(ref Bid, ref Offer, Offer.Quantity);
+                        Offers[i] = Offer;
                     } else {
-                        BidsAndOffers offer = offers[i];
-                        TradeManager.CreateTrade(ref b, ref offer, LMMAmount);
-                        offers[i] = offer;
+                        BidsAndOffers Offer = Offers[i];
+                        TradeManager.CreateTrade(ref Bid, ref Offer, LMMAmount);
+                        Offers[i] = Offer;
                     }
                 }
             }
         }
 
-        void ProRataWithLMM() {
-
+        static void ProRataWithLMM(ref BidsAndOffers Bid, ref List<BidsAndOffers> Offers, int ProRataMinimumAlloaction) {
+            int TotalQuanityOfOffers = 0;
+            int BidQuanity = Bid.Quantity;
+            foreach (BidsAndOffers o in Offers) {
+                TotalQuanityOfOffers += o.Quantity;
+            }
+            for (int i = 0; i < Offers.Count; i++) {
+                double ProRata = (double)Offers[i].Quantity / (double)TotalQuanityOfOffers;
+                int ProRataAmount = (int)(ProRata * BidQuanity);
+                if (ProRataAmount >= ProRataMinimumAlloaction) {
+                    if (ProRataAmount > Offers[i].Quantity) {
+                        BidsAndOffers Offer = Offers[i];
+                        TradeManager.CreateTrade(ref Bid, ref Offer, Offer.Quantity);
+                        Offers[i] = Offer;
+                    } else {
+                        BidsAndOffers Offer = Offers[i];
+                        TradeManager.CreateTrade(ref Bid, ref Offer, ProRataAmount);
+                        Offers[i] = Offer;
+                    }
+                }
+            }
         }
+
+        static void FIFO(ref BidsAndOffers Bid, ref List<BidsAndOffers> Offers) {
+            for (int i = 0; i < Offers.Count; i++) {
+                if (Offers[i].Quantity > Bid.Quantity) {
+                    BidsAndOffers Offer = Offers[i];
+                    TradeManager.CreateTrade(ref Bid, ref Offer, Bid.Quantity);
+                    Offers[i] = Offer;
+                    break;
+                } else {
+                    BidsAndOffers Offer = Offers[i];
+                    TradeManager.CreateTrade(ref Bid, ref Offer, Offer.Quantity);
+                    Offers[i] = Offer;
+                }
+            }
+        }
+
     }
     class BidsAndOffers {
         public int Type;
