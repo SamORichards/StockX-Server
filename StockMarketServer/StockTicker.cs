@@ -7,17 +7,31 @@ using MySql.Data.MySqlClient;
 
 namespace StockMarketServer {
     class StockTicker {
+        static int LastDay = 0;
         public static void RunTicker() {
+            if (DateTime.Now.Day != LastDay) {
+                LastDay = DateTime.Now.Day;
+                DataBaseHandler.SetData("UPDATE Stock SET OpeningPriceToday = CurrentPrice, HighToday = CurrentPrice, LowToday = CurrentPrice, VolumeTraded = 0");
+            }
             List<Stock> stocks = new List<Stock>();
             MySqlDataReader reader = DataBaseHandler.GetData("SELECT StockName, CurrentPrice FROM Stock");
             while (reader.Read()) {
                 stocks.Add(new Stock((string)reader["StockName"], (double)reader["CurrentPrice"]));
             }
             foreach (Stock s in stocks) {
-                int NumberOfBids = DataBaseHandler.GetCount("SELECT SUM(Quantity) FROM Pool WHERE Type = 0 AND StockName = '" + s.StockName + "'");
-                int NumberOfOffers = DataBaseHandler.GetCount("SELECT SUM(Quantity) FROM Pool WHERE Type = 1 AND StockName = '" + s.StockName + "'");
-                long StocksInCirculation = DataBaseHandler.GetCount("SELECT COUNT(*) FROM StocksInCirculation WHERE StockName = '" + s.StockName + "'");
-                UpdateStockPrice(s.StockName, s.StartingPrice, NumberOfBids, NumberOfOffers, StocksInCirculation);
+                int NumberOfBids = DataBaseHandler.GetCount("SELECT SUM(Quantity) FROM Pool WHERE Type = 0 AND StockName = '" + s.StockName + "'  AND TurnsInPool = 0");
+                int NumberOfOffers = DataBaseHandler.GetCount("SELECT SUM(Quantity) FROM Pool WHERE Type = 1 AND StockName = '" + s.StockName + "'  AND TurnsInPool = 0");
+                long StocksInCirculation = DataBaseHandler.GetCount("SELECT COUNT(StockID) FROM StocksInCirculation WHERE StockName = '" + s.StockName + "'");
+                double NewPrice = UpdateStockPrice(s.StockName, s.StartingPrice, NumberOfBids, NumberOfOffers, StocksInCirculation);
+                if (NewPrice != s.StartingPrice) {
+                    if (NewPrice < 0) {
+                        DataBaseHandler.SetData("UPDATE Stock SET CurrentPrice = 0.00 WHERE StockName = '" + s.StockName + "'");
+                    } else {
+                        DataBaseHandler.SetData("UPDATE Stock SET CurrentPrice = " + NewPrice + " WHERE StockName = '" + s.StockName + "'");
+                    }
+                }
+                DataBaseHandler.SetData("UPDATE Stock SET LowToday = CurrentPrice WHERE CurrentPrice < LowToday");
+                DataBaseHandler.SetData("UPDATE Stock SET HighToday = CurrentPrice WHERE CurrentPrice > HighToday");
             }
         }
         class Stock {
@@ -31,8 +45,8 @@ namespace StockMarketServer {
 
         private static double UpdateStockPrice(string StockName, double startPrice, int numOfBuyers, int numOfOffers, long totalStocksInCirculation) {
             //Console.WriteLine("{0}: The Number Of Bids is {1}, and the Number Of Offers is: {2}", StockName, numOfBuyers, numOfOffers);
-            double ChangeInPrice = ((double)(numOfBuyers - numOfOffers) / (double)totalStocksInCirculation);
-            startPrice += (ChangeInPrice * 10);
+            double ChangeInPrice = (((double)(numOfBuyers - numOfOffers) / (double)totalStocksInCirculation)/10000) * startPrice;
+            startPrice += ChangeInPrice;
             //Console.WriteLine("New Price for " + StockName + " is " + startPrice);
             return startPrice;
         }

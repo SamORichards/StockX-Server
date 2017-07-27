@@ -25,7 +25,7 @@ namespace StockMarketServer {
                 MySqlDataReader OfferPoolReader = DataBaseHandler.GetData("SELECT DISTINCT Price FROM Pool WHERE Type = 1 AND StockName = '" + s + "' ORDER BY Price DESC");
                 List<double> OfferPriceLevels = new List<double>();
                 while (OfferPoolReader.Read()) {
-                    OfferPriceLevels.Add((double)BidPoolReader["Price"]);
+                    OfferPriceLevels.Add((double)OfferPoolReader["Price"]);
                 }
                 if (OfferPriceLevels.Count == 0) {
                     continue;
@@ -36,29 +36,69 @@ namespace StockMarketServer {
                             MySqlDataReader BidReader = DataBaseHandler.GetData("SELECT * FROM Pool WHERE Type = 0 AND StockName = '" + s + "' AND Price = " + BidPrice);
                             List<BidsAndOffers> bids = new List<BidsAndOffers>();
                             while (BidReader.Read()) {
-                                bids.Add(new BidsAndOffers((int)BidReader["Type"], (string)BidReader["TimePlaced"], (double)BidReader["Price"], (int)BidReader["User"], (string)BidReader["StockName"], (int)BidReader["Quantity"], (int)BidReader["TurnsInPool"]));
+                                //Console.WriteLine(BidReader["Type"].GetType());
+                                //Console.WriteLine(BidReader["TimePlaced"].GetType());
+                                //Console.WriteLine(BidReader["Price"].GetType());
+                                //Console.WriteLine(BidReader["User"].GetType());
+                                //Console.WriteLine(BidReader["StockName"].GetType());
+                                //Console.WriteLine(BidReader["Quantity"].GetType());
+                                //Console.WriteLine(BidReader["TurnsInPool"].GetType());
+
+                                bids.Add(new BidsAndOffers((bool)BidReader["Type"], (DateTime)BidReader["TimePlaced"], (double)BidReader["Price"], (int)BidReader["User"], (string)BidReader["StockName"], (int)BidReader["Quantity"], (int)BidReader["TurnsInPool"]));
                             }
                             MySqlDataReader OfferReader = DataBaseHandler.GetData("SELECT * FROM Pool WHERE Type = 1 AND StockName = '" + s + "' AND Price = " + OfferPriceLevels[i]);
                             List<BidsAndOffers> offers = new List<BidsAndOffers>();
                             while (OfferReader.Read()) {
-                                offers.Add(new BidsAndOffers((int)OfferReader["Type"], (string)OfferReader["TimePlaced"], (double)OfferReader["Price"], (int)OfferReader["User"], (string)OfferReader["StockName"], (int)OfferReader["Quantity"], (int)OfferReader["TurnsInPool"]));
+                                offers.Add(new BidsAndOffers((bool)OfferReader["Type"], (DateTime)OfferReader["TimePlaced"], (double)OfferReader["Price"], (int)OfferReader["User"], (string)OfferReader["StockName"], (int)OfferReader["Quantity"], (int)OfferReader["TurnsInPool"]));
                             }
                             while (bids.Count != 0 && offers.Count != 0) {
                                 BidsAndOffers b = bids[0];
                                 LMMRound(ref b, ref offers);
-                                ProRataWithLMM(ref b, ref offers, 5);
-                                FIFO(ref b, ref offers);
-                                bids[0] = b;
-                                if (bids[0].Quantity <= 0) {
-                                    TradeManager.RemoveFromPool(bids[0]);
-                                    bids.RemoveAt(0);
-                                }
+                                #region Cleaner
                                 foreach (BidsAndOffers o in offers) {
                                     if (o.Quantity <= 0) {
                                         TradeManager.RemoveFromPool(o);
                                     }
                                 }
                                 offers.RemoveAll((o) => o.Quantity <= 0);
+                                bids[0] = b;
+                                if (bids[0].Quantity <= 0) {
+                                    TradeManager.RemoveFromPool(bids[0]);
+                                    bids.RemoveAt(0);
+                                    continue;
+                                }
+                                #endregion
+                                ProRataWithLMM(ref b, ref offers, 5);
+                                #region Cleaner
+                                foreach (BidsAndOffers o in offers) {
+                                    if (o.Quantity <= 0) {
+                                        TradeManager.RemoveFromPool(o);
+                                    }
+                                }
+                                offers.RemoveAll((o) => o.Quantity <= 0);
+                                bids[0] = b;
+                                if (bids[0].Quantity <= 0) {
+                                    TradeManager.RemoveFromPool(bids[0]);
+                                    bids.RemoveAt(0);
+                                    continue;
+                                }
+                                #endregion
+                                FIFO(ref b, ref offers);
+                                #region Cleaner
+                                foreach (BidsAndOffers o in offers) {
+                                    if (o.Quantity <= 0) {
+                                        TradeManager.RemoveFromPool(o);
+                                    }
+                                }
+                                offers.RemoveAll((o) => o.Quantity <= 0);
+                                bids[0] = b;
+                                if (bids[0].Quantity <= 0) {
+                                    TradeManager.RemoveFromPool(bids[0]);
+                                    bids.RemoveAt(0);
+                                    continue;
+                                }
+                                #endregion
+
                             }
                         }
                     }
@@ -68,9 +108,14 @@ namespace StockMarketServer {
 
 
 
+
         private static void LMMRound(ref BidsAndOffers Bid, ref List<BidsAndOffers> Offers) {
             for (int i = 0; i < Offers.Count; i++) {
-                double LMMPercentage = (double) DataBaseHandler.GetData("SELECT LMM FROM Users WHERE ID = " + Offers[i].User)["LMM"];
+                MySqlDataReader r = DataBaseHandler.GetData("SELECT LMM FROM Users WHERE ID = " + Offers[i].User);
+                double LMMPercentage = 0;
+                while (r.Read()) {
+                    LMMPercentage = (double)r["LMM"];
+                }
                 if (LMMPercentage > 0f) {
                     int LMMAmount = (int)(Bid.Quantity * LMMPercentage);
                     if (LMMAmount > Offers[i].Quantity) {
@@ -93,7 +138,10 @@ namespace StockMarketServer {
                 TotalQuanityOfOffers += o.Quantity;
             }
             for (int i = 0; i < Offers.Count; i++) {
-                double ProRata = (double)Offers[i].Quantity / (double)TotalQuanityOfOffers;
+                double ProRata = 0;
+                if (Offers[i].Quantity != 0) {
+                    ProRata = (double)Offers[i].Quantity / (double)TotalQuanityOfOffers;
+                }
                 int ProRataAmount = (int)(ProRata * BidQuanity);
                 if (ProRataAmount >= ProRataMinimumAlloaction) {
                     if (ProRataAmount > Offers[i].Quantity) {
@@ -110,6 +158,7 @@ namespace StockMarketServer {
         }
 
         static void FIFO(ref BidsAndOffers Bid, ref List<BidsAndOffers> Offers) {
+            Offers.OrderBy((o) => o.TimePlaced);
             for (int i = 0; i < Offers.Count; i++) {
                 if (Offers[i].Quantity > Bid.Quantity) {
                     BidsAndOffers Offer = Offers[i];
@@ -126,14 +175,14 @@ namespace StockMarketServer {
 
     }
     class BidsAndOffers {
-        public int Type;
-        public string TimePlaced;
+        public bool Type;
+        public DateTime TimePlaced;
         public double Price;
         public int User;
         public string StockName;
         public int Quantity;
         public int TurnsInPool;
-        public BidsAndOffers(int type, string timePlace, double price, int user, string stockName, int quantity, int turnsInPool) {
+        public BidsAndOffers(bool type, DateTime timePlace, double price, int user, string stockName, int quantity, int turnsInPool) {
             Type = type;
             TimePlaced = timePlace;
             Price = price;
