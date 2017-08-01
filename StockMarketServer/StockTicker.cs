@@ -8,7 +8,7 @@ using MySql.Data.MySqlClient;
 namespace StockMarketServer {
     class StockTicker {
         static int LastDay = 0;
-        public static void RunTicker() {
+        public static void RunTicker(bool SavePrices) {
             if (DateTime.Now.Day != LastDay) {
                 LastDay = DateTime.Now.Day;
                 DataBaseHandler.SetData("UPDATE Stock SET OpeningPriceToday = CurrentPrice, HighToday = CurrentPrice, LowToday = CurrentPrice, VolumeTraded = 0");
@@ -25,11 +25,13 @@ namespace StockMarketServer {
                 double NewPrice = UpdateStockPrice(s.StockName, s.StartingPrice, NumberOfBids, NumberOfOffers, StocksInCirculation);
                 if (NewPrice != s.StartingPrice) {
                     if (NewPrice < 0) { NewPrice = 0; }
-                        DataBaseHandler.SetData("UPDATE Stock SET CurrentPrice = " + NewPrice + " WHERE StockName = '" + s.StockName + "'");
+                    DataBaseHandler.SetData("UPDATE Stock SET CurrentPrice = " + NewPrice + " WHERE StockName = '" + s.StockName + "'");
                 }
                 DataBaseHandler.SetData("UPDATE Stock SET LowToday = CurrentPrice WHERE CurrentPrice < LowToday");
                 DataBaseHandler.SetData("UPDATE Stock SET HighToday = CurrentPrice WHERE CurrentPrice > HighToday");
-                DataBaseHandler.SetData("INSERT INTO PricingHistory (Price, StockName) VALUES (" + NewPrice + ", '" + s.StockName +"')");
+                if (SavePrices) {
+                    DataBaseHandler.SetData("INSERT INTO PricingHistory (Price, StockName) VALUES (" + NewPrice + ", '" + s.StockName + "')");
+                }
             }
         }
         class Stock {
@@ -43,7 +45,7 @@ namespace StockMarketServer {
 
         private static double UpdateStockPrice(string StockName, double startPrice, int numOfBuyers, int numOfOffers, long totalStocksInCirculation) {
             //Console.WriteLine("{0}: The Number Of Bids is {1}, and the Number Of Offers is: {2}", StockName, numOfBuyers, numOfOffers);
-            double ChangeInPrice = (((double)(numOfBuyers - numOfOffers) / (double)totalStocksInCirculation)/10000) * startPrice;
+            double ChangeInPrice = (((double)(numOfBuyers - numOfOffers) / (double)totalStocksInCirculation) / 10000) * startPrice;
             startPrice += ChangeInPrice;
             //Console.WriteLine("New Price for " + StockName + " is " + startPrice);
             return startPrice;
