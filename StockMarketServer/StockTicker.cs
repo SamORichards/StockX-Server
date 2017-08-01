@@ -31,6 +31,7 @@ namespace StockMarketServer {
                 DataBaseHandler.SetData("UPDATE Stock SET HighToday = CurrentPrice WHERE CurrentPrice > HighToday");
                 if (SavePrices) {
                     DataBaseHandler.SetData("INSERT INTO PricingHistory (Price, StockName) VALUES (" + NewPrice + ", '" + s.StockName + "')");
+                    TimingManager.PricingTimer.Restart();
                 }
             }
         }
