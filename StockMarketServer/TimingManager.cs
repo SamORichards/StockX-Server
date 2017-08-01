@@ -9,15 +9,17 @@ using System.Threading.Tasks;
 namespace StockMarketServer {
     class TimingManager {
         static Stopwatch MainTimer = new Stopwatch();
+        public static Stopwatch PricingTimer = new Stopwatch();
         static void Main(string[] args) {
             DataBaseHandler.StartServer();
             MainTimer.Start();
+            PricingTimer.Start();
             int i = 0;
             while (true) {
                 if (MainTimer.Elapsed.Seconds > 1) {
                     //Run sever tick
                     Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  Tick Started");
-                    StockTicker.RunTicker();
+                    StockTicker.RunTicker(PricingTimer.Elapsed.Minutes >=1);
                     Pool.RunPool();
                     Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  Tick Completed");
                     MainTimer.Stop();
