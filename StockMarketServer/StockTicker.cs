@@ -24,14 +24,12 @@ namespace StockMarketServer {
                 long StocksInCirculation = DataBaseHandler.GetCount("SELECT COUNT(StockID) FROM StocksInCirculation WHERE StockName = '" + s.StockName + "'");
                 double NewPrice = UpdateStockPrice(s.StockName, s.StartingPrice, NumberOfBids, NumberOfOffers, StocksInCirculation);
                 if (NewPrice != s.StartingPrice) {
-                    if (NewPrice < 0) {
-                        DataBaseHandler.SetData("UPDATE Stock SET CurrentPrice = 0.00 WHERE StockName = '" + s.StockName + "'");
-                    } else {
+                    if (NewPrice < 0) { NewPrice = 0; }
                         DataBaseHandler.SetData("UPDATE Stock SET CurrentPrice = " + NewPrice + " WHERE StockName = '" + s.StockName + "'");
-                    }
                 }
                 DataBaseHandler.SetData("UPDATE Stock SET LowToday = CurrentPrice WHERE CurrentPrice < LowToday");
                 DataBaseHandler.SetData("UPDATE Stock SET HighToday = CurrentPrice WHERE CurrentPrice > HighToday");
+                DataBaseHandler.SetData("INSERT INTO PricingHistory (StockName, Price) VALUES (" + NewPrice + ", '" + s.StockName +"'");
             }
         }
         class Stock {
