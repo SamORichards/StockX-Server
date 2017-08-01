@@ -8,7 +8,7 @@ namespace StockMarketServer {
     class Pool {
         public static void RunPool() {
 
-            DataBaseHandler.SetData("DELETE FROM Pool WHERE TurnsInPool = 50");
+            DataBaseHandler.SetData("DELETE FROM Pool WHERE TurnsInPool >= 50");
             MatchMaker.RunMatchMaker();
             DataBaseHandler.SetData("UPDATE Pool SET TurnsInPool = TurnsInPool + 1");
         }
