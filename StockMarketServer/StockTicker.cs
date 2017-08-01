@@ -8,7 +8,7 @@ using MySql.Data.MySqlClient;
 namespace StockMarketServer {
     class StockTicker {
         static int LastDay = 0;
-        public static void RunTicker(bool SavePrices) {
+        public static void RunTicker() {
             if (DateTime.Now.Day != LastDay) {
                 LastDay = DateTime.Now.Day;
                 DataBaseHandler.SetData("UPDATE Stock SET OpeningPriceToday = CurrentPrice, HighToday = CurrentPrice, LowToday = CurrentPrice, VolumeTraded = 0");
@@ -29,9 +29,7 @@ namespace StockMarketServer {
                 }
                 DataBaseHandler.SetData("UPDATE Stock SET LowToday = CurrentPrice WHERE CurrentPrice < LowToday");
                 DataBaseHandler.SetData("UPDATE Stock SET HighToday = CurrentPrice WHERE CurrentPrice > HighToday");
-                if (SavePrices) {
-                    DataBaseHandler.SetData("INSERT INTO PricingHistory (Price, StockName) VALUES (" + NewPrice + ", '" + s.StockName + "'");
-                }
+                DataBaseHandler.SetData("INSERT INTO PricingHistory (Price, StockName) VALUES (" + NewPrice + ", '" + s.StockName +"')");
             }
         }
         class Stock {
