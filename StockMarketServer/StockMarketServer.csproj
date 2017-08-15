@@ -43,6 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AlgoTraderManager.cs" />
     <Compile Include="DataBaseHandler.cs" />
     <Compile Include="MatchMaker.cs" />
     <Compile Include="NetworkHandler.cs" />
