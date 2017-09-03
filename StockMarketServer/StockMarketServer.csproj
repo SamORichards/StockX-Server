@@ -43,8 +43,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AlgorythmicTrader1.cs" />
     <Compile Include="DataBaseHandler.cs" />
     <Compile Include="MatchMaker.cs" />
+    <Compile Include="MathsHelper.cs" />
     <Compile Include="NetworkHandler.cs" />
     <Compile Include="Pool.cs" />
     <Compile Include="StockTicker.cs" />

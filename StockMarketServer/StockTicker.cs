@@ -9,6 +9,9 @@ namespace StockMarketServer {
     class StockTicker {
         static int LastDay = 0;
         public static void RunTicker(bool SavePrices) {
+            if (SavePrices) {
+                Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + ": Pricing Saved");
+            }
             if (DateTime.Now.Day != LastDay) {
                 LastDay = DateTime.Now.Day;
                 DataBaseHandler.SetData("UPDATE Stock SET OpeningPriceToday = CurrentPrice, HighToday = CurrentPrice, LowToday = CurrentPrice, VolumeTraded = 0");
