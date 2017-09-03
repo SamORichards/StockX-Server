@@ -13,8 +13,7 @@ namespace StockMarketServer {
                 Quantity = StockAvailable;
             }
             if (Quantity != 0) {
-                string sqlFormattedDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-                DataBaseHandler.SetData(string.Format("INSERT INTO Trades(Time, StockName, BuyerID, SellerID, Price, Quantity) VALUES('{0}', '{1}', {2}, {3}, {4}, {5})", sqlFormattedDate, Bid.StockName, Bid.User, Offer.User, Offer.Price, Quantity));
+                DataBaseHandler.SetData(string.Format("INSERT INTO Trades(StockName, BuyerID, SellerID, Price, Quantity) VALUES('{0}', {1}, {2}, {3}, {4})", Bid.StockName, Bid.User, Offer.User, Offer.Price, Quantity));
                 DataBaseHandler.SetData(string.Format("UPDATE StocksInCirculation set OwnerID = {0}, LastTradedPrice = {1} WHERE StockName = '{2}' AND OwnerID = {3} LIMIT {4}", Bid.User, Offer.Price, Offer.StockName, Offer.User, Quantity));
                 DataBaseHandler.SetData(string.Format("UPDATE Stock SET VolumeTraded = VolumeTraded + {0} WHERE StockName = '{1}'", Quantity, Offer.StockName));
                 DataBaseHandler.SetData(string.Format("UPDATE Users SET Balance = Balance + {0} WHERE ID = {1}", Offer.Price * Quantity, Offer.User));
