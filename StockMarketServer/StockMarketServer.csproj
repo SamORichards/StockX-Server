@@ -47,6 +47,7 @@
     <Compile Include="AlgoTrader.cs" />
     <Compile Include="AlgoTraderManager.cs" />
     <Compile Include="DataBaseHandler.cs" />
+    <Compile Include="DataBaseHandlerAlgo.cs" />
     <Compile Include="MatchMaker.cs" />
     <Compile Include="MathsHelper.cs" />
     <Compile Include="NetworkHandler.cs" />

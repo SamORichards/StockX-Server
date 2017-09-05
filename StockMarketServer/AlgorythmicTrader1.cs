@@ -28,7 +28,7 @@ namespace StockMarketServer {
 
         public override void RunTurn() {
             base.RunTurn();
-            MySqlDataReader reader = DataBaseHandler.GetData("SELECT Price FROM Trades WHERE Time > " + LastTurn);
+            MySqlDataReader reader = DataBaseHandlerAlgo.GetData("SELECT Price FROM Trades WHERE Time > '" + LastTurn + "'");
             List<double> Trades = new List<double>();
             while (reader.Read()) {
                 Trades.Add((double)reader["Price"]);
@@ -86,7 +86,7 @@ namespace StockMarketServer {
                 Owner = owner;
                 this.TargetStock = TargetStock;
                 StartTime = DateTime.Now;
-                double CurrentPrice = DataBaseHandler.GetCount("SELECT SUM(Price) FROM Stock WHERE StockName = '" + this.TargetStock + "'");
+                double CurrentPrice = DataBaseHandlerAlgo.GetCount("SELECT SUM(Price) FROM Stock WHERE StockName = '" + this.TargetStock + "'");
                 switch (stance) {
                     case Stance.ShortTermLong:
                         this.Quanity = Quanity;
@@ -106,26 +106,26 @@ namespace StockMarketServer {
             }
 
             private void ShortTermShort(int Quanity, double Price) {
-                DataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.offer, Price, client, TargetStock, Quanity));
+                DataBaseHandlerAlgo.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.offer, Price, client, TargetStock, Quanity));
             }
 
             void ShortTermLong(int Quanity, double Price) {
-                DataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.bid, Price, client, TargetStock, Quanity));
+                DataBaseHandlerAlgo.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.bid, Price, client, TargetStock, Quanity));
             }
 
             public void RunTurn() {
-                double CurrentPrice = DataBaseHandler.GetCount("SELECT SUM(Price) FROM Stock WHERE StockName = '" + TargetStock + "'");
+                double CurrentPrice = DataBaseHandlerAlgo.GetCount("SELECT SUM(Price) FROM Stock WHERE StockName = '" + TargetStock + "'");
                 TimeSpan TimeTaken = DateTime.Now - StartTime;
                 switch (stance) {
                     case Stance.ShortTermLong:
                         if ((CurrentPrice >= SuccessPrice || CurrentPrice < FailurePrice) && !OfferPlaced && TimeTaken.TotalMinutes > RequiredTime) {
-                            DataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.offer, CurrentPrice, client, TargetStock, Quanity));
+                            DataBaseHandlerAlgo.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.offer, CurrentPrice, client, TargetStock, Quanity));
                             OfferPlaced = true;
                         }
                         break;
                     case Stance.ShortTermShort:
                         if ((CurrentPrice <= SuccessPrice || CurrentPrice > FailurePrice) && !OfferPlaced && TimeTaken.TotalMinutes > RequiredTime) {
-                            DataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.bid, CurrentPrice, client, TargetStock, Quanity));
+                            DataBaseHandlerAlgo.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.bid, CurrentPrice, client, TargetStock, Quanity));
                             OfferPlaced = true;
                         }
                         break;
