@@ -11,10 +11,17 @@ namespace StockMarketServer {
     class AlgoTraderManager {
         static List<AlgoTrader> Traders = new List<AlgoTrader>();
 
+        static Random _random = new Random();
+
+        private static double RandomNumberBetween(double minValue, double maxValue) {
+            var next = _random.NextDouble();
+
+            return minValue + (next * (maxValue - minValue));
+        }
+
         public static void CreateShortTermTarders() {
             DataBaseHandlerAlgo.SetData("DELETE FROM StocksInCirculation WHERE OwnerID > 404");
             DataBaseHandlerAlgo.SetData("DELETE FROM Users WHERE Nickname = 'AlgoTrader'");
-            Random r = new Random();
             MySqlDataReader reader = DataBaseHandlerAlgo.GetData("SELECT StockName, CurrentPrice FROM Stock");
             List<KeyValuePair<string, double>> Stocks = new List<KeyValuePair<string, double>>();
             while (reader.Read()) {
@@ -22,18 +29,18 @@ namespace StockMarketServer {
                 double CurrentPrice = (double)reader["CurrentPrice"];
                 Stocks.Add(new KeyValuePair<string, double>(StockName, CurrentPrice));
             }
-            foreach(KeyValuePair<string, double> s in Stocks) {
+            foreach (KeyValuePair<string, double> s in Stocks) {
                 string StockName = s.Key;
                 double CurrentPrice = s.Value;
-                for (int i = 0; i < r.Next(1, 2); i++) {
+                for (int i = 0; i < _random.Next(1, 25); i++) {
                     string email = "AlgoTrader" + StockName + "@" + i + ".com";
                     string command = string.Format("INSERT INTO Users(NickName, Email, Password, Balance, Admin, LMM) VALUES ('{0}', '{1}', '{2}', {3}, {4}, {5})", "AlgoTrader", email, "Password", 1000000, 0, 0.20f);
                     DataBaseHandlerAlgo.SetData(command);
                     int UserId = DataBaseHandlerAlgo.GetCount("SELECT SUM(ID) FROM Users WHERE Email = '" + email + "'");
-                    for (int j = 0; j < r.Next(100, 200); j++) {
+                    for (int j = 0; j < _random.Next(100, 200); j++) {
                         DataBaseHandlerAlgo.SetData(string.Format("INSERT INTO StocksInCirculation(StockName, OwnerID, LastTradedPrice) VALUES ('{0}', {1}, {2})", StockName, UserId, CurrentPrice));
                     }
-                    Traders.Add(new AlgorithmsTrader1(StockName, UserId));
+                    Traders.Add(new AlgorithmsTrader1(StockName, UserId, RandomNumberBetween(1.1, 2.1), RandomNumberBetween(1.9, 2.9), _random.Next(5,15), _random.Next(60,250), RandomNumberBetween(0,1)));
                 }
             }
         }

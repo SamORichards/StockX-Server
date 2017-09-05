@@ -49,7 +49,7 @@ namespace StockMarketServer {
 
         private static double UpdateStockPrice(string StockName, double startPrice, int numOfBuyers, int numOfOffers, long totalStocksInCirculation) {
             //Console.WriteLine("{0}: The Number Of Bids is {1}, and the Number Of Offers is: {2}", StockName, numOfBuyers, numOfOffers);
-            double ChangeInPrice = (((double)(numOfBuyers - numOfOffers) / (double)totalStocksInCirculation) / 10000) * startPrice;
+            double ChangeInPrice = (((double)(numOfBuyers - numOfOffers) / (double)totalStocksInCirculation) / 100) * startPrice;
             startPrice += ChangeInPrice;
             //Console.WriteLine("New Price for " + StockName + " is " + startPrice);
             return startPrice;
