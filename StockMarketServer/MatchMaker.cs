@@ -118,14 +118,16 @@ namespace StockMarketServer {
                 }
                 if (LMMPercentage > 0f) {
                     int LMMAmount = (int)(Bid.Quantity * LMMPercentage);
-                    if (LMMAmount > Offers[i].Quantity) {
-                        BidsAndOffers Offer = Offers[i];
-                        TradeManager.CreateTrade(ref Bid, ref Offer, Offer.Quantity);
-                        Offers[i] = Offer;
-                    } else {
-                        BidsAndOffers Offer = Offers[i];
-                        TradeManager.CreateTrade(ref Bid, ref Offer, LMMAmount);
-                        Offers[i] = Offer;
+                    if (LMMAmount > 0) {
+                        if (LMMAmount > Offers[i].Quantity) {
+                            BidsAndOffers Offer = Offers[i];
+                            TradeManager.CreateTrade(ref Bid, ref Offer, Offer.Quantity);
+                            Offers[i] = Offer;
+                        } else {
+                            BidsAndOffers Offer = Offers[i];
+                            TradeManager.CreateTrade(ref Bid, ref Offer, LMMAmount);
+                            Offers[i] = Offer;
+                        }
                     }
                 }
             }
@@ -160,11 +162,16 @@ namespace StockMarketServer {
         static void FIFO(ref BidsAndOffers Bid, ref List<BidsAndOffers> Offers) {
             Offers.OrderBy((o) => o.TimePlaced);
             for (int i = 0; i < Offers.Count; i++) {
+                if (Bid.Quantity == 0) {
+                    break;
+                }
+                if (Offers[i].Quantity == 0) {
+                    continue;
+                }
                 if (Offers[i].Quantity > Bid.Quantity) {
                     BidsAndOffers Offer = Offers[i];
                     TradeManager.CreateTrade(ref Bid, ref Offer, Bid.Quantity);
                     Offers[i] = Offer;
-                    break;
                 } else {
                     BidsAndOffers Offer = Offers[i];
                     TradeManager.CreateTrade(ref Bid, ref Offer, Offer.Quantity);

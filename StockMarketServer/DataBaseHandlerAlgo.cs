@@ -13,28 +13,32 @@ namespace StockMarketServer {
         public static int UserID { get { return 1; } }
 
         public static void StartServer() {
-            OpenConnection();
+            for (int i = 0; i < 3; i++) {
+                try {
+                    OpenConnection();
+                    break;
+                } catch { }
+            }
         }
 
         public static MySqlDataReader GetData(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             MySqlDataReader reader;
-            //for (int i = 0; i < 10; i++) {
-            //try {
-            reader = com.ExecuteReader();
-            return reader;
-            //} 
-            //catch {
-            //    if (i == 9) {
-            //        try {
-            //            sqlCon.Close();
-            //        } catch { }
-            //        OpenConnection();
-            //        i = 0;
-            //    }
-            //}
-            //}
+            for (int i = 0; i < 10; i++) {
+                try {
+                    reader = com.ExecuteReader();
+                    return reader;
+                } catch {
+                    if (i == 9) {
+                        try {
+                            sqlCon.Close();
+                        } catch { }
+                        OpenConnection();
+                        i = 0;
+                    }
+                }
+            }
             return null;
         }
 

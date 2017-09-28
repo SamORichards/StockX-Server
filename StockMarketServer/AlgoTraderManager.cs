@@ -20,7 +20,7 @@ namespace StockMarketServer {
         }
 
         public static void CreateShortTermTarders() {
-            DataBaseHandlerAlgo.SetData("DELETE FROM StocksInCirculation WHERE OwnerID > 404");
+            DataBaseHandlerAlgo.SetData("DELETE FROM Inventories WHERE UserID > 404");
             DataBaseHandlerAlgo.SetData("DELETE FROM Users WHERE Nickname = 'AlgoTrader'");
             MySqlDataReader reader = DataBaseHandlerAlgo.GetData("SELECT StockName, CurrentPrice FROM Stock");
             List<KeyValuePair<string, double>> Stocks = new List<KeyValuePair<string, double>>();
@@ -32,15 +32,13 @@ namespace StockMarketServer {
             foreach (KeyValuePair<string, double> s in Stocks) {
                 string StockName = s.Key;
                 double CurrentPrice = s.Value;
-                for (int i = 0; i < _random.Next(1, 25); i++) {
+                for (int i = 0; i < _random.Next(1, 3); i++) {
                     string email = "AlgoTrader" + StockName + "@" + i + ".com";
                     string command = string.Format("INSERT INTO Users(NickName, Email, Password, Balance, Admin, LMM) VALUES ('{0}', '{1}', '{2}', {3}, {4}, {5})", "AlgoTrader", email, "Password", 1000000, 0, 0.20f);
                     DataBaseHandlerAlgo.SetData(command);
                     int UserId = DataBaseHandlerAlgo.GetCount("SELECT SUM(ID) FROM Users WHERE Email = '" + email + "'");
-                    for (int j = 0; j < _random.Next(100, 200); j++) {
-                        DataBaseHandlerAlgo.SetData(string.Format("INSERT INTO StocksInCirculation(StockName, OwnerID, LastTradedPrice) VALUES ('{0}', {1}, {2})", StockName, UserId, CurrentPrice));
-                    }
-                    Traders.Add(new AlgorithmsTrader1(StockName, UserId, RandomNumberBetween(1.1, 2.1), RandomNumberBetween(1.9, 2.9), _random.Next(5,15), _random.Next(60,250), RandomNumberBetween(0,1)));
+                    DataBaseHandler.SetData(string.Format("INSERT INTO Inventories(UserID, StockName, Quantity, LastTradedPrice) VALUES({0}, '{1}', {2}, {3})", UserId, StockName, _random.Next(100, 200), CurrentPrice));
+                    Traders.Add(new AlgorithmsTrader1(StockName, UserId, RandomNumberBetween(1.1, 2.1), RandomNumberBetween(1.9, 2.9), _random.Next(1, 3), _random.Next(20, 30), RandomNumberBetween(0, 1)));
                 }
             }
         }

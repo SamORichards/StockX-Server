@@ -39,7 +39,9 @@ namespace StockMarketServer {
 
         public override void RunTurn() {
             base.RunTurn();
-            MySqlDataReader reader = DataBaseHandlerAlgo.GetData("SELECT Price FROM Trades WHERE Time > '" + LastTurn + "'");
+            string s = "SELECT Price FROM Trades WHERE Time > '" + LastTurn.ToString("yyyy-MM-dd HH:mm:ss") + "' AND StockName = '" + TargetStock + "'";
+            MySqlDataReader reader = DataBaseHandlerAlgo.GetData(s);
+            //Console.WriteLine(s);
             List<double> Trades = new List<double>();
             while (reader.Read()) {
                 Trades.Add((double)reader["Price"]);
@@ -99,18 +101,19 @@ namespace StockMarketServer {
                 this.TargetStock = TargetStock;
                 StartTime = DateTime.Now;
                 double CurrentPrice = DataBaseHandlerAlgo.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + this.TargetStock + "'");
+                CurrentPrice = Math.Round(CurrentPrice, 2);
                 switch (stance) {
                     case Stance.ShortTermLong:
                         this.Quanity = Quanity;
-                        SuccessPrice = CurrentPrice + 0.01f;
-                        FailurePrice = CurrentPrice - 0.005f;
+                        SuccessPrice = CurrentPrice + 0.02f;
+                        FailurePrice = CurrentPrice - 0.01f;
                         RequiredTime = 5;
                         ShortTermLong(Quanity, CurrentPrice);
                         break;
                     case Stance.ShortTermShort:
                         this.Quanity = Quanity;
-                        SuccessPrice = CurrentPrice - 0.01f;
-                        FailurePrice = CurrentPrice + 0.005f;
+                        SuccessPrice = CurrentPrice - 0.02f;
+                        FailurePrice = CurrentPrice + 0.01f;
                         RequiredTime = 5;
                         ShortTermShort(Quanity, CurrentPrice);
                         break;
@@ -130,6 +133,7 @@ namespace StockMarketServer {
             public void RunTurn() {
                 double CurrentPrice = DataBaseHandlerAlgo.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + TargetStock + "'");
                 TimeSpan TimeTaken = DateTime.Now - StartTime;
+                CurrentPrice = Math.Round(CurrentPrice, 2);
                 switch (stance) {
                     case Stance.ShortTermLong:
                         if ((CurrentPrice >= SuccessPrice || CurrentPrice < FailurePrice) && !OfferPlaced && TimeTaken.TotalMinutes > RequiredTime) {

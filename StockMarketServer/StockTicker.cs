@@ -24,7 +24,7 @@ namespace StockMarketServer {
             foreach (Stock s in stocks) {
                 int NumberOfBids = DataBaseHandler.GetCount("SELECT SUM(Quantity) FROM Pool WHERE Type = 0 AND StockName = '" + s.StockName + "'  AND TurnsInPool = 0");
                 int NumberOfOffers = DataBaseHandler.GetCount("SELECT SUM(Quantity) FROM Pool WHERE Type = 1 AND StockName = '" + s.StockName + "'  AND TurnsInPool = 0");
-                long StocksInCirculation = DataBaseHandler.GetCount("SELECT COUNT(StockID) FROM StocksInCirculation WHERE StockName = '" + s.StockName + "'");
+                long StocksInCirculation = DataBaseHandler.GetCount("SELECT SUM(Quantity) FROM Inventories WHERE StockName = '" + s.StockName + "'");
                 double NewPrice = UpdateStockPrice(s.StockName, s.StartingPrice, NumberOfBids, NumberOfOffers, StocksInCirculation);
                 if (NewPrice != s.StartingPrice) {
                     if (NewPrice < 0) { NewPrice = 0; }
@@ -49,8 +49,8 @@ namespace StockMarketServer {
 
         private static double UpdateStockPrice(string StockName, double startPrice, int numOfBuyers, int numOfOffers, long totalStocksInCirculation) {
             //Console.WriteLine("{0}: The Number Of Bids is {1}, and the Number Of Offers is: {2}", StockName, numOfBuyers, numOfOffers);
-            double ChangeInPrice = (((double)(numOfBuyers - numOfOffers) / (double)totalStocksInCirculation) / 100) * startPrice;
-            startPrice += ChangeInPrice;
+            //double ChangeInPrice = (((double)(numOfBuyers - numOfOffers) / (double)totalStocksInCirculation) / 100) * startPrice;
+            //startPrice += ChangeInPrice;
             //Console.WriteLine("New Price for " + StockName + " is " + startPrice);
             return startPrice;
         }
