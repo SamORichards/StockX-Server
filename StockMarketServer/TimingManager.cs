@@ -32,7 +32,7 @@ namespace StockMarketServer {
                         TraderTimer.Reset();
                     }
                     Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  Tick Started");
-                    StockTicker.RunTicker(PricingTimer.Elapsed.Minutes >=1);
+                    StockTicker.RunTicker(PricingTimer.Elapsed.Seconds >= 15);
                     Pool.RunPool();
                     Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  Tick Completed");
                     MainTimer.Stop();
