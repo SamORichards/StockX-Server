@@ -40,7 +40,7 @@ namespace StockMarketServer {
             }
         }
         static void PricingThinner(string StockName) {
-            MySqlDataReader reader = DataBaseHandler.GetData(string.Format("SELECT Time From PricingHistory WHERE StockName = '{0}' AND Time < '{1}' ORDER BY Time DESC", StockName, DateTime.Now.AddMinutes(-10).ToString("yyyy-MM-dd HH:mm:ss")));
+            MySqlDataReader reader = DataBaseHandler.GetData(string.Format("SELECT Time From PricingHistory WHERE StockName = '{0}' AND Time < '{1}' ORDER BY Time ASC", StockName, DateTime.Now.AddSeconds(-10).ToString("yyyy-MM-dd HH:mm:ss")));
             List<DateTime> LastHour = new List<DateTime>();
             List<DateTime> Last12Hours = new List<DateTime>();
             List<DateTime> LastDay = new List<DateTime>();
@@ -54,7 +54,7 @@ namespace StockMarketServer {
                     LastHour.Add(time);
                 } else if (time > DateTime.Now.AddHours(-12)) {
                     Last12Hours.Add(time);
-                } else if (time > DateTime.Now.AddHours(-24)) {
+                } else if (time > DateTime.Now.AddDays(-1)) {
                     LastDay.Add(time);
                 } else if (time > DateTime.Now.AddDays(-7)) {
                     LastWeek.Add(time);
@@ -71,7 +71,7 @@ namespace StockMarketServer {
                     last = LastHour[i];
                     continue;
                 }
-                if ((LastHour[i] - last).Minutes < 2) {
+                if ((LastHour[i] - last).Seconds < 10) {
                     ToBeDeleted.Add(LastHour[i]);
                 } else {
                     last = LastHour[i];
@@ -83,7 +83,7 @@ namespace StockMarketServer {
                     last = Last12Hours[i];
                     continue;
                 }
-                if ((Last12Hours[i] - last).Minutes < 10) {
+                if ((Last12Hours[i] - last).Minutes < 2) {
                     ToBeDeleted.Add(Last12Hours[i]);
                 } else {
                     last = Last12Hours[i];
@@ -95,7 +95,7 @@ namespace StockMarketServer {
                     last = LastDay[i];
                     continue;
                 }
-                if ((LastDay[i] - last).Minutes < 20) {
+                if ((LastDay[i] - last).Minutes < 10) {
                     ToBeDeleted.Add(LastDay[i]);
                 } else {
                     last = LastDay[i];
@@ -139,7 +139,7 @@ namespace StockMarketServer {
             }
             for (int i = 0; i < ToBeDeleted.Count; i++) {
                 DataBaseHandler.SetData("DELETE FROM PricingHistory WHERE StockName = '" + StockName + "' AND Time = '" + ToBeDeleted[i].ToString("yyyy-MM-dd HH:mm:ss") + "'");
-            }                
+            }
         }
 
         class Stock {
