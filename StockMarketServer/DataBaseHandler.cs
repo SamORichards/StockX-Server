@@ -21,19 +21,19 @@ namespace StockMarketServer {
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             MySqlDataReader reader;
             //for (int i = 0; i < 10; i++) {
-                //try {
-                reader = com.ExecuteReader();
-                return reader;
-                //} 
-                //catch {
-                //    if (i == 9) {
-                //        try {
-                //            sqlCon.Close();
-                //        } catch { }
-                //        OpenConnection();
-                //        i = 0;
-                //    }
-                //}
+            //try {
+            reader = com.ExecuteReader();
+            return reader;
+            //} 
+            //catch {
+            //    if (i == 9) {
+            //        try {
+            //            sqlCon.Close();
+            //        } catch { }
+            //        OpenConnection();
+            //        i = 0;
+            //    }
+            //}
             //}
             return null;
         }
@@ -43,17 +43,17 @@ namespace StockMarketServer {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             //for (int i = 0; i < 10; i++) {
-                //try {
-                com.ExecuteNonQuery();
-                //    } catch {
-                //        if (i == 9) {
-                //            try {
-                //                sqlCon.Close();
-                //            } catch { }
-                //            OpenConnection();
-                //            i = 0;
-                //        }
-                //    }
+            //try {
+            com.ExecuteNonQuery();
+            //    } catch {
+            //        if (i == 9) {
+            //            try {
+            //                sqlCon.Close();
+            //            } catch { }
+            //            OpenConnection();
+            //            i = 0;
+            //        }
+            //    }
             //}
         }
 
@@ -61,22 +61,22 @@ namespace StockMarketServer {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             //for (int i = 0; i < 10; i++) {
-                //try {
-                string t = com.ExecuteScalar().ToString();
-                if (t.Length == 0) {
-                    return 0;
-                } else {
-                    return int.Parse(t);
-                }
-                //    } catch {
-                //        if (i == 9) {
-                //            try {
-                //                sqlCon.Close();
-                //            } catch { }
-                //            OpenConnection();
-                //            i = 0;
-                //        }
-                //    }
+            //try {
+            string t = com.ExecuteScalar().ToString();
+            if (t.Length == 0) {
+                return 0;
+            } else {
+                return int.Parse(t);
+            }
+            //    } catch {
+            //        if (i == 9) {
+            //            try {
+            //                sqlCon.Close();
+            //            } catch { }
+            //            OpenConnection();
+            //            i = 0;
+            //        }
+            //    }
             //}
         }
 
@@ -114,15 +114,15 @@ namespace StockMarketServer {
 
         private static void OpenConnection() {
             for (int i = 0; i < 10; i++) {
-                //try {
+                try {
                     sqlCon.Open();
                     break;
-                //} catch {
-                  //  if (i == 9) {
-//Console.WriteLine("Failed to connect to database");
-               //         throw new Exception("Failed to connect to database");
-                 //   }
-              //  }
+                } catch {
+                    if (i == 9) {
+                        Console.WriteLine("Failed to connect to database");
+                        throw new Exception("Failed to connect to database");
+                    }
+                }
             }
         }
     }

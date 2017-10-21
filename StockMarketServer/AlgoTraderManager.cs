@@ -9,6 +9,7 @@ namespace StockMarketServer {
     enum MathOperator { Greater, Less }
     enum BuySell { Buy, Sell }
     class AlgoTraderManager {
+        public static ThreadDataBaseHandler threadDataBaseHandler = new ThreadDataBaseHandler();
         static List<AlgoTrader> Traders = new List<AlgoTrader>();
 
         static Random _random = new Random();
@@ -20,9 +21,9 @@ namespace StockMarketServer {
         }
 
         public static void CreateShortTermTarders() {
-            DataBaseHandlerAlgo.SetData("DELETE FROM Inventories WHERE UserID > 404");
-            DataBaseHandlerAlgo.SetData("DELETE FROM Users WHERE Nickname = 'AlgoTrader'");
-            MySqlDataReader reader = DataBaseHandlerAlgo.GetData("SELECT StockName, CurrentPrice FROM Stock");
+            threadDataBaseHandler.SetData("DELETE FROM Inventories WHERE UserID > 404");
+            threadDataBaseHandler.SetData("DELETE FROM Users WHERE Nickname = 'AlgoTrader'");
+            MySqlDataReader reader = threadDataBaseHandler.GetData("SELECT StockName, CurrentPrice FROM Stock");
             List<KeyValuePair<string, double>> Stocks = new List<KeyValuePair<string, double>>();
             while (reader.Read()) {
                 string StockName = (string)reader["StockName"];
@@ -35,12 +36,13 @@ namespace StockMarketServer {
                 for (int i = 0; i < _random.Next(1, 3); i++) {
                     string email = "AlgoTrader" + StockName + "@" + i + ".com";
                     string command = string.Format("INSERT INTO Users(NickName, Email, Password, Balance, Admin, LMM) VALUES ('{0}', '{1}', '{2}', {3}, {4}, {5})", "AlgoTrader", email, "Password", 1000000, 0, 0.20f);
-                    DataBaseHandlerAlgo.SetData(command);
-                    int UserId = DataBaseHandlerAlgo.GetCount("SELECT SUM(ID) FROM Users WHERE Email = '" + email + "'");
+                    threadDataBaseHandler.SetData(command);
+                    int UserId = threadDataBaseHandler.GetCount("SELECT SUM(ID) FROM Users WHERE Email = '" + email + "'");
                     DataBaseHandler.SetData(string.Format("INSERT INTO Inventories(UserID, StockName, Quantity, LastTradedPrice) VALUES({0}, '{1}', {2}, {3})", UserId, StockName, _random.Next(100, 200), CurrentPrice));
                     Traders.Add(new AlgorithmsTrader1(StockName, UserId, RandomNumberBetween(1.1, 2.1), RandomNumberBetween(1.9, 2.9), _random.Next(1, 3), _random.Next(20, 30), RandomNumberBetween(0, 1)));
                 }
             }
+            threadDataBaseHandler.CloseCon();
         }
 
         public static void RunTrader() {
@@ -68,7 +70,7 @@ namespace StockMarketServer {
         }
         private static void BasicTraders() {
             List<Trader> Traders = new List<Trader>();
-            MySqlDataReader reader = DataBaseHandlerAlgo.GetData("SELECT * FROM AlgoTraders");
+            MySqlDataReader reader = threadDataBaseHandler.GetData("SELECT * FROM AlgoTraders");
             while (reader.Read()) {
                 Trader trader = new Trader();
                 trader.TraderID = (int)reader["ID"];
@@ -102,7 +104,7 @@ namespace StockMarketServer {
             foreach (Trader trader in Traders) {
                 bool TriggersSuccesful = true;
                 foreach (Trigger trigger in trader.Triggers) {
-                    double CurrentPrice = DataBaseHandlerAlgo.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + trigger.Target + "'");
+                    double CurrentPrice = threadDataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + trigger.Target + "'");
                     if (trigger.Operator == MathOperator.Greater) {
                         if (!(trigger.Value > CurrentPrice)) {
                             TriggersSuccesful = false;
@@ -115,10 +117,10 @@ namespace StockMarketServer {
                 }
                 if (TriggersSuccesful) {
                     foreach (Action action in trader.Actions) {
-                        double CurrentPrice = DataBaseHandlerAlgo.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + action.Target + "'");
-                        DataBaseHandlerAlgo.SetData(string.Format("INSERT INTO Pool(Type, Price, User, StockName, Quantity) VALUES({0}, {1}, {2}, '{3}', {4})", (int)action.BuyOrSell, CurrentPrice, trader.OwnerId, action.Target, action.Quantity));
+                        double CurrentPrice = threadDataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + action.Target + "'");
+                        threadDataBaseHandler.SetData(string.Format("INSERT INTO Pool(Type, Price, User, StockName, Quantity) VALUES({0}, {1}, {2}, '{3}', {4})", (int)action.BuyOrSell, CurrentPrice, trader.OwnerId, action.Target, action.Quantity));
                     }
-                    DataBaseHandlerAlgo.SetData("DELETE FROM AlgoTraders WHERE ID = " + trader.TraderID);
+                    threadDataBaseHandler.SetData("DELETE FROM AlgoTraders WHERE ID = " + trader.TraderID);
                     TradersToDelete.Add(trader);
                 }
             }
@@ -126,6 +128,7 @@ namespace StockMarketServer {
                 Traders.Remove(t);
             }
             TradersToDelete.Clear();
+            threadDataBaseHandler.CloseCon();
         }
     }
 }

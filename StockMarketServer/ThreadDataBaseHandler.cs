@@ -1,49 +1,51 @@
-﻿using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MySql.Data.MySqlClient;
+using System.Threading;
 
 namespace StockMarketServer {
-    class DataBaseHandlerAlgo {
-        static string myConnectionString = DataBaseHandler.myConnectionString;
-        public static MySqlConnection sqlCon = new MySqlConnection(myConnectionString);
+    class ThreadDataBaseHandler {
+        public static string myConnectionString = DataBaseHandler.myConnectionString;
+        public MySqlConnection sqlCon = new MySqlConnection(myConnectionString);
 
-        public static int UserID { get { return 1; } }
+        public static int UserID { get { return DataBaseHandler.UserID; } }
 
-        public static void StartServer() {
-            for (int i = 0; i < 3; i++) {
-                try {
-                    OpenConnection();
-                    break;
-                } catch { }
-            }
+        public  void StartServer() {
+            OpenConnection();
+        }
+        public void CloseCon() {
+            try {
+                sqlCon.Close();
+            } catch { }
         }
 
-        public static MySqlDataReader GetData(string command) {
+        public MySqlDataReader GetData(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             MySqlDataReader reader;
-            for (int i = 0; i < 10; i++) {
-                try {
-                    reader = com.ExecuteReader();
-                    return reader;
-                } catch {
-                    if (i == 9) {
-                        try {
-                            sqlCon.Close();
-                        } catch { }
-                        OpenConnection();
-                        i = 0;
-                    }
-                }
-            }
+            //for (int i = 0; i < 10; i++) {
+            //try {
+            reader = com.ExecuteReader();
+            return reader;
+            //} 
+            //catch {
+            //    if (i == 9) {
+            //        try {
+            //            sqlCon.Close();
+            //        } catch { }
+            //        OpenConnection();
+            //        i = 0;
+            //    }
+            //}
+            //}
             return null;
         }
 
 
-        public static void SetData(string command) {
+        public  void SetData(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             //for (int i = 0; i < 10; i++) {
@@ -61,7 +63,7 @@ namespace StockMarketServer {
             //}
         }
 
-        public static int GetCount(string command) {
+        public  int GetCount(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             //for (int i = 0; i < 10; i++) {
@@ -84,7 +86,7 @@ namespace StockMarketServer {
             //}
         }
 
-        public static double GetCountDouble(string command) {
+        public  double GetCountDouble(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             //for (int i = 0; i < 10; i++) {
@@ -108,7 +110,7 @@ namespace StockMarketServer {
             //}
         }
 
-        static void ReadyConnection() {
+         void ReadyConnection() {
             try {
                 sqlCon.Close();
             } catch { }
@@ -116,17 +118,13 @@ namespace StockMarketServer {
         }
 
 
-        private static void OpenConnection() {
+        private  void OpenConnection() {
             for (int i = 0; i < 10; i++) {
-                //try {
+                try {
                 sqlCon.Open();
-                break;
-                //} catch {
-                //  if (i == 9) {
-                //Console.WriteLine("Failed to connect to database");
-                //         throw new Exception("Failed to connect to database");
-                //   }
-                //  }
+                    break;
+                } catch {
+                }
             }
         }
     }
