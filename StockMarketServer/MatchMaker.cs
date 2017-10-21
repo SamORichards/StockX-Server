@@ -101,6 +101,7 @@ namespace StockMarketServer {
                 }
             }
             threadDataBaseHandler.CloseCon();
+            threadDataBaseHandler = null;
         }
 
 
