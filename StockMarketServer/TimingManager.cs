@@ -23,7 +23,7 @@ namespace StockMarketServer {
                 if (MainTimer.Elapsed.Seconds > 1) {
                     //Run sever tick
                     if (TraderTimer.Elapsed.Seconds > 30) {
-                        AlgoTraderManager.RunTrader();
+                        Task.Factory.StartNew(() => AlgoTraderManager.RunTrader());
                         Console.WriteLine("Traders Run");
                         TraderTimer.Reset();
                     }

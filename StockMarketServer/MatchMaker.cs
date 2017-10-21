@@ -27,6 +27,7 @@ namespace StockMarketServer {
             if (OfferPriceLevels.Count == 0) {
                 return;
             }
+            threadDataBaseHandler.CloseCon();
             foreach (double BidPrice in BidPriceLevels) {
                 for (int i = 0; i < OfferPriceLevels.Count; i++) {
                     if (OfferPriceLevels[i] <= BidPrice) {
@@ -54,13 +55,13 @@ namespace StockMarketServer {
                             #region Cleaner
                             foreach (BidsAndOffers o in offers) {
                                 if (o.Quantity <= 0) {
-                                    TradeManager.RemoveFromPool(o);
+                                    TradeManager.RemoveFromPool(o, threadDataBaseHandler);
                                 }
                             }
                             offers.RemoveAll((o) => o.Quantity <= 0);
                             bids[0] = b;
                             if (bids[0].Quantity <= 0) {
-                                TradeManager.RemoveFromPool(bids[0]);
+                                TradeManager.RemoveFromPool(bids[0], threadDataBaseHandler);
                                 bids.RemoveAt(0);
                                 continue;
                             }
@@ -69,13 +70,13 @@ namespace StockMarketServer {
                             #region Cleaner
                             foreach (BidsAndOffers o in offers) {
                                 if (o.Quantity <= 0) {
-                                    TradeManager.RemoveFromPool(o);
+                                    TradeManager.RemoveFromPool(o, threadDataBaseHandler);
                                 }
                             }
                             offers.RemoveAll((o) => o.Quantity <= 0);
                             bids[0] = b;
                             if (bids[0].Quantity <= 0) {
-                                TradeManager.RemoveFromPool(bids[0]);
+                                TradeManager.RemoveFromPool(bids[0], threadDataBaseHandler);
                                 bids.RemoveAt(0);
                                 continue;
                             }
@@ -84,13 +85,13 @@ namespace StockMarketServer {
                             #region Cleaner
                             foreach (BidsAndOffers o in offers) {
                                 if (o.Quantity <= 0) {
-                                    TradeManager.RemoveFromPool(o);
+                                    TradeManager.RemoveFromPool(o, threadDataBaseHandler);
                                 }
                             }
                             offers.RemoveAll((o) => o.Quantity <= 0);
                             bids[0] = b;
                             if (bids[0].Quantity <= 0) {
-                                TradeManager.RemoveFromPool(bids[0]);
+                                TradeManager.RemoveFromPool(bids[0], threadDataBaseHandler);
                                 bids.RemoveAt(0);
                                 continue;
                             }

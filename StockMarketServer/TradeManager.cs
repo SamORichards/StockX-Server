@@ -36,8 +36,7 @@ namespace StockMarketServer {
             threadDataBaseHandler.CloseCon();
         }
 
-        public static void RemoveFromPool(BidsAndOffers Trade) {
-            ThreadDataBaseHandler threadDataBaseHandler = new ThreadDataBaseHandler();
+        public static void RemoveFromPool(BidsAndOffers Trade, ThreadDataBaseHandler threadDataBaseHandler) {
             string command = string.Format("DELETE FROM Pool WHERE Type = {0} AND TimePlaced = '{1}' AND Price = {2} AND User = {3} AND StockName = '{4}'", Trade.Type, Trade.TimePlaced.ToString("yyyy-MM-dd HH:mm:ss"), Trade.Price, Trade.User, Trade.StockName);
             threadDataBaseHandler.SetData(command);
             threadDataBaseHandler.CloseCon();
