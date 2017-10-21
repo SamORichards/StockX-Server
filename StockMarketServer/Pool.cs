@@ -28,6 +28,7 @@ namespace StockMarketServer {
                 MarketMaker.AddJob(b);
             }
             DataBaseHandler.SetData("DELETE FROM Pool WHERE `TurnsInPool` = 30");
+            DataBaseHandler.SetData("DELETE FROM Trades WHERE Time < '" + DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd HH:mm:ss") + "'");
             MarketMaker.RunTurn();
         }
     }
