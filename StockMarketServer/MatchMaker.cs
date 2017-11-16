@@ -9,7 +9,7 @@ namespace StockMarketServer {
     class MatchMaker {
         ThreadDataBaseHandler threadDataBaseHandler;
 
-        public void RunMatchMaker(string s, ThreadDataBaseHandler localThreadDataBaseHandler) {
+        public async void RunMatchMaker(string s, ThreadDataBaseHandler localThreadDataBaseHandler) {
             threadDataBaseHandler = localThreadDataBaseHandler;
             MySqlDataReader BidPoolReader = threadDataBaseHandler.GetData("SELECT DISTINCT Price FROM Pool WHERE Type = 0 AND StockName = '" + s + "' ORDER BY Price ASC");
             List<double> BidPriceLevels = new List<double>();
@@ -131,7 +131,7 @@ namespace StockMarketServer {
             }
         }
 
-         void ProRataWithLMM(ref BidsAndOffers Bid, ref List<BidsAndOffers> Offers, int ProRataMinimumAlloaction) {
+        void ProRataWithLMM(ref BidsAndOffers Bid, ref List<BidsAndOffers> Offers, int ProRataMinimumAlloaction) {
             int TotalQuanityOfOffers = 0;
             int BidQuanity = Bid.Quantity;
             foreach (BidsAndOffers o in Offers) {

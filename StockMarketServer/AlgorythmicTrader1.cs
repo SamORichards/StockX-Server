@@ -11,13 +11,13 @@ namespace StockMarketServer {
     public enum Stance { ShortTermLong, ShortTermShort }
     class AlgorithmsTrader1 : AlgoTrader {
         DateTime LastTurn;
-        int UserID;
         string TargetStock;
         public List<StockTurn> StockTurns = new List<StockTurn>();
         List<MarketStance> stances = new List<MarketStance>();
 
-        public double ShortTermShortRequirement { get; private set; }
-        public double ShortTermLongRequirement { get; private set; }
+
+        public double ShortRequirement { get; private set; }
+        public double LongRequirement { get; private set; }
         public int MinAmount { get; private set; }
         public int MaxAmount { get; private set; }
         public double Aggression { get; private set; }
@@ -27,11 +27,12 @@ namespace StockMarketServer {
         //Takes a look at last two cycles
         //establishes trend
         //purchases or sell depending on position eg int or short
-        public AlgorithmsTrader1(string target, int ClientID, double ShortTermShortRequirement, double ShortTermLongRequirement, int MinAmount, int MaxAmount, double Aggresion) {
+        public AlgorithmsTrader1(int ID, string target, int ClientID, double ShortTermShortRequirement, double ShortTermLongRequirement, int MinAmount, int MaxAmount, double Aggresion) {
+            this.ID = ID;
             TargetStock = target;
             UserID = ClientID;
-            this.ShortTermShortRequirement = ShortTermShortRequirement;
-            this.ShortTermLongRequirement = ShortTermLongRequirement;
+            this.ShortRequirement = ShortTermShortRequirement;
+            this.LongRequirement = ShortTermLongRequirement;
             this.MinAmount = MinAmount;
             this.MaxAmount = MaxAmount;
             this.Aggression = Aggression;
@@ -76,10 +77,10 @@ namespace StockMarketServer {
                     TotalLast3Turns += (int)StockTurns[StockTurns.Count - i].Trend + 1;
                 }
                 double AverageLast3Turns = (double)TotalLast3Turns / 3f;
-                if (AverageLast3Turns <= ShortTermLongRequirement) {//1.6f
-                    stances.Add(new MarketStance(Stance.ShortTermLong, MathsHelper.Lerp(MinAmount, MaxAmount, 1f - (AverageLast3Turns / ShortTermLongRequirement) + Aggression), UserID, TargetStock, this, new ThreadDataBaseHandler()));
-                } else if (AverageLast3Turns >= ShortTermShortRequirement) {//2.4f
-                    stances.Add(new MarketStance(Stance.ShortTermShort, MathsHelper.Lerp(MinAmount, MaxAmount, (AverageLast3Turns / ShortTermLongRequirement) + Aggression), UserID, TargetStock, this, new ThreadDataBaseHandler()));
+                if (AverageLast3Turns <= LongRequirement) {//1.6f
+                    stances.Add(new MarketStance(Stance.ShortTermLong, MathsHelper.Lerp(MinAmount, MaxAmount, 1f - (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, new ThreadDataBaseHandler()));
+                } else if (AverageLast3Turns >= ShortRequirement) {//2.4f
+                    stances.Add(new MarketStance(Stance.ShortTermShort, MathsHelper.Lerp(MinAmount, MaxAmount, (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, new ThreadDataBaseHandler()));
                 }
             }
         }

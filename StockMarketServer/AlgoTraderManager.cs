@@ -35,17 +35,41 @@ namespace StockMarketServer {
                 double CurrentPrice = s.Value;
                 for (int i = 0; i < _random.Next(1, 3); i++) {
                     string email = "AlgoTrader" + StockName + "@" + i + ".com";
-                    string command = string.Format("INSERT INTO Users(NickName, Email, Password, Balance, Admin, LMM) VALUES ('{0}', '{1}', '{2}', {3}, {4}, {5})", "AlgoTrader", email, "Password", 1000000, 0, 0.20f);
-                    threadDataBaseHandler.SetData(command);
-                    int UserId = threadDataBaseHandler.GetCount("SELECT SUM(ID) FROM Users WHERE Email = '" + email + "'");
+                    int UserId = threadDataBaseHandler.GetCount(string.Format("INSERT INTO Users(NickName, Email, Password, Balance, Admin, LMM) VALUES ('{0}', '{1}', '{2}', {3}, {4}, {5}); SELECT LAST_INSERT_ID();", "AlgoTrader", email, "Password", 1000000, 0, 0.20f));
                     DataBaseHandler.SetData(string.Format("INSERT INTO Inventories(UserID, StockName, Quantity, LastTradedPrice) VALUES({0}, '{1}', {2}, {3})", UserId, StockName, _random.Next(100, 200), CurrentPrice));
-                    Traders.Add(new AlgorithmsTrader1(StockName, UserId, RandomNumberBetween(1.1, 2.1), RandomNumberBetween(1.9, 2.9), _random.Next(1, 3), _random.Next(20, 30), RandomNumberBetween(0, 1)));
+                    DataBaseHandler.SetData(string.Format("INSERT INTO AlgoTrader(Target, UserID, ShortRequirement, LongRequirement, MinAmount, MaxAmount, Aggresion) VALUES ('{0}', {1}, {2}, {3}, {4}, {5}, {6})", StockName, UserId, RandomNumberBetween(1.1, 2.1), RandomNumberBetween(1.9, 2.9), _random.Next(1, 3), _random.Next(20, 30), RandomNumberBetween(0, 1)));
                 }
             }
             threadDataBaseHandler.CloseCon();
         }
 
         public static void RunTrader() {
+            MySqlDataReader reader = threadDataBaseHandler.GetData("SELECT ID FROM AlgoTrader");
+            List<int> TradersInDB = new List<int>();
+            List<int> TradersToDelete = new List<int>();
+            while (reader.Read()) {
+                TradersInDB.Add((int)reader["ID"]);
+            }
+            for (int i = 0; i < Traders.Count; i++) {
+                if (!TradersInDB.Contains(Traders[i].ID)) {
+                    TradersToDelete.Add(i);
+                }
+            }
+            for (int i = 0; i < TradersInDB.Count; i++) {
+                if (!Traders.Exists((t)=> t.ID == TradersInDB[i])) {
+                    reader = threadDataBaseHandler.GetData("SELECT * FROM AlgoTrader WHERE ID = " + TradersInDB[i]);
+                    while (reader.Read()) {
+                        Traders.Add(new AlgorithmsTrader1(TradersInDB[i], (string)reader["Target"], (int)reader["UserId"], (double)reader["ShortRequirement"], (double)reader["LongRequirement"], (int)reader["MinAmount"], (int)reader["MaxAmount"], (double)reader["Aggresion"]));
+                    }
+                }
+            }
+            while (TradersToDelete.Count > 0) {
+                threadDataBaseHandler.SetData("DELETE FROM Users WHERE ID = " + Traders[TradersToDelete[0]].UserID);
+                threadDataBaseHandler.SetData("UPDATE Inventories SET UserID = 1 WHERE UserID = "+ Traders[TradersToDelete[0]].UserID);
+                threadDataBaseHandler.SetData("DELETE FROM AlgoTrader WHERE ID = " + Traders[TradersToDelete[0]].ID);
+                Traders.Remove(Traders[TradersToDelete[0]]);
+                TradersToDelete.RemoveAt(0);
+            }
             foreach (AlgoTrader t in Traders) {
                 t.RunTurn();
             }
@@ -70,7 +94,7 @@ namespace StockMarketServer {
         }
         private static void BasicTraders() {
             List<Trader> Traders = new List<Trader>();
-            MySqlDataReader reader = threadDataBaseHandler.GetData("SELECT * FROM AlgoTraders");
+            MySqlDataReader reader = threadDataBaseHandler.GetData("SELECT * FROM UserAlgoTraders");
             while (reader.Read()) {
                 Trader trader = new Trader();
                 trader.TraderID = (int)reader["ID"];
