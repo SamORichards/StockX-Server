@@ -79,8 +79,8 @@ namespace StockMarketServer {
         class Trader {
             public int TraderID;
             public int OwnerId;
-            public List<Trigger> Triggers = new List<Trigger>();
-            public List<Action> Actions = new List<Action>();
+            public Trigger Trigger;
+            public Action action;
         }
         class Trigger {
             public string Target;
@@ -99,51 +99,32 @@ namespace StockMarketServer {
                 Trader trader = new Trader();
                 trader.TraderID = (int)reader["ID"];
                 trader.OwnerId = (int)reader["OwnerID"];
-                string Command = (string)reader["Command"];
-                string Triggers = Command.Split('#')[0];
-                string Actions = Command.Split('#')[1];
-                foreach (string s in Triggers.Split('*')) {
-                    if (s.Length == 0) {
-                        continue;
-                    }
-                    Trigger t = new Trigger();
-                    t.Target = s.Split('|')[0];
-                    t.Operator = (MathOperator)int.Parse(s.Split('|')[1]);
-                    t.Value = double.Parse(s.Split('|')[2]);
-                    trader.Triggers.Add(t);
-                }
-                foreach (string s in Actions.Split('*')) {
-                    if (s.Length == 0) {
-                        continue;
-                    }
-                    Action a = new Action();
-                    a.Target = s.Split('|')[0];
-                    a.BuyOrSell = (BuySell)int.Parse(s.Split('|')[1]);
-                    a.Quantity = int.Parse(s.Split('|')[2]);
-                    trader.Actions.Add(a);
-                }
+                trader.Trigger = new Trigger();
+                trader.Trigger.Target = (string)reader["TTarget"];
+                trader.Trigger.Operator = (MathOperator)((int)reader["TOperator"]);
+                trader.Trigger.Value = (double)reader["TValue"];
+                trader.action = new Action();
+                trader.action.Target = (string)reader["ATarget"];
+                trader.action.BuyOrSell = (BuySell)((int)reader["ABuyOrSell"]);
+                trader.action.Quantity = (int)reader["AQuantity"];
                 Traders.Add(trader);
             }
             List<Trader> TradersToDelete = new List<Trader>();
             foreach (Trader trader in Traders) {
                 bool TriggersSuccesful = true;
-                foreach (Trigger trigger in trader.Triggers) {
-                    double CurrentPrice = threadDataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + trigger.Target + "'");
-                    if (trigger.Operator == MathOperator.Greater) {
-                        if (!(trigger.Value > CurrentPrice)) {
+                    double CurrentPrice = threadDataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + trader.Trigger.Target + "'");
+                    if (trader.Trigger.Operator == MathOperator.Greater) {
+                        if (!(trader.Trigger.Value > CurrentPrice)) {
                             TriggersSuccesful = false;
                         }
                     } else {
-                        if (!(trigger.Value < CurrentPrice)) {
+                        if (!(trader.Trigger.Value < CurrentPrice)) {
                             TriggersSuccesful = false;
                         }
                     }
-                }
                 if (TriggersSuccesful) {
-                    foreach (Action action in trader.Actions) {
-                        double CurrentPrice = threadDataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + action.Target + "'");
-                        threadDataBaseHandler.SetData(string.Format("INSERT INTO Pool(Type, Price, User, StockName, Quantity) VALUES({0}, {1}, {2}, '{3}', {4})", (int)action.BuyOrSell, CurrentPrice, trader.OwnerId, action.Target, action.Quantity));
-                    }
+                    CurrentPrice = threadDataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + trader.action.Target + "'");
+                    threadDataBaseHandler.SetData(string.Format("INSERT INTO Pool(Type, Price, User, StockName, Quantity) VALUES({0}, {1}, {2}, '{3}', {4})", (int)trader.action.BuyOrSell, CurrentPrice, trader.OwnerId, trader.action.Target, trader.action.Quantity));
                     threadDataBaseHandler.SetData("DELETE FROM AlgoTraders WHERE ID = " + trader.TraderID);
                     TradersToDelete.Add(trader);
                 }
