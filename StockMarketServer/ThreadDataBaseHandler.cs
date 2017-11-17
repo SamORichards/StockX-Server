@@ -26,88 +26,37 @@ namespace StockMarketServer {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             MySqlDataReader reader;
-            //for (int i = 0; i < 10; i++) {
-            //try {
             reader = com.ExecuteReader();
             return reader;
-            //} 
-            //catch {
-            //    if (i == 9) {
-            //        try {
-            //            sqlCon.Close();
-            //        } catch { }
-            //        OpenConnection();
-            //        i = 0;
-            //    }
-            //}
-            //}
-            return null;
         }
 
 
         public  void SetData(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
-            //for (int i = 0; i < 10; i++) {
-            //try {
             com.ExecuteNonQuery();
-            //    } catch {
-            //        if (i == 9) {
-            //            try {
-            //                sqlCon.Close();
-            //            } catch { }
-            //            OpenConnection();
-            //            i = 0;
-            //        }
-            //    }
-            //}
         }
 
         public  int GetCount(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
-            //for (int i = 0; i < 10; i++) {
-            //try {
             string t = com.ExecuteScalar().ToString();
             if (t.Length == 0) {
                 return 0;
             } else {
                 return int.Parse(t);
             }
-            //    } catch {
-            //        if (i == 9) {
-            //            try {
-            //                sqlCon.Close();
-            //            } catch { }
-            //            OpenConnection();
-            //            i = 0;
-            //        }
-            //    }
-            //}
         }
 
         public  double GetCountDouble(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
-            //for (int i = 0; i < 10; i++) {
-            //try {
             string t = com.ExecuteScalar().ToString();
             if (t.Length == 0) {
                 return 0;
             } else {
                 return double.Parse(t);
             }
-
-            //    } catch {
-            //        if (i == 9) {
-            //            try {
-            //                sqlCon.Close();
-            //            } catch { }
-            //            OpenConnection();
-            //            i = 0;
-            //        }
-            //    }
-            //}
         }
 
          void ReadyConnection() {

@@ -50,7 +50,6 @@
     <Compile Include="MarketMaker.cs" />
     <Compile Include="MatchMaker.cs" />
     <Compile Include="MathsHelper.cs" />
-    <Compile Include="NetworkHandler.cs" />
     <Compile Include="Pool.cs" />
     <Compile Include="StockTicker.cs" />
     <Compile Include="ThreadDataBaseHandler.cs" />
