@@ -18,7 +18,6 @@ namespace StockMarketServer {
             PricingTimer.Start();
             TraderTimer.Start();
             int i = 0;
-            AlgoTraderManager.CreateShortTermTarders();
             while (true) {
                 if (MainTimer.Elapsed.Seconds > 1) {
                     //Run sever tick
