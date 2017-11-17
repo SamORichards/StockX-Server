@@ -12,6 +12,7 @@ namespace StockMarketServer {
         public static int QueueSize { private set { } get { return Queue.Count; } }
         static int clientID = 2;
         static int TurnCounter = 0;
+        static ThreadDataBaseHandler threadDataBaseHandler = new ThreadDataBaseHandler();
 
         public static void AddJob(BidsAndOffers bidAndOffer) {
             Queue.Add(new Job(JobType.Bid, bidAndOffer));
@@ -69,7 +70,7 @@ namespace StockMarketServer {
             int StocksAvailable = NumberOfStocksOwned - AlreadySelling;
             if (job.Quanity <= StocksAvailable) {
                 BidsAndOffers offer = new BidsAndOffers(true, DateTime.Now, job.bidAndOffer.Price, clientID, job.bidAndOffer.StockName, job.Quanity, 0);
-                TradeManager.CreateTrade(ref offer, ref job.bidAndOffer, job.Quanity);
+                TradeManager.CreateTrade(ref offer, ref job.bidAndOffer, job.Quanity, threadDataBaseHandler);
                 Queue.Remove(job);
             } else {
                 //TODO: Count how many times takes and maybe cancel transaction if can't be completed
@@ -77,13 +78,13 @@ namespace StockMarketServer {
                 DataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.bid, Math.Round(Price, 2) + 1.5, clientID, job.bidAndOffer.StockName, job.Quanity - StocksAvailable));
                 Console.WriteLine(job.Quanity - StocksAvailable);
                 BidsAndOffers offer = new BidsAndOffers(true, DateTime.Now, job.bidAndOffer.Price, clientID, job.bidAndOffer.StockName, StocksAvailable, 0);
-                TradeManager.CreateTrade(ref offer, ref job.bidAndOffer, job.Quanity - StocksAvailable);
+                TradeManager.CreateTrade(ref offer, ref job.bidAndOffer, job.Quanity - StocksAvailable, threadDataBaseHandler);
             }
         }
 
         static void RunOfffer(Job job) {
             BidsAndOffers bid = new BidsAndOffers(false, DateTime.Now, job.bidAndOffer.Price, clientID, job.bidAndOffer.StockName, job.Quanity, 0);
-            TradeManager.CreateTrade(ref job.bidAndOffer, ref bid, job.Quanity);
+            TradeManager.CreateTrade(ref job.bidAndOffer, ref bid, job.Quanity, threadDataBaseHandler);
             Queue.Remove(job);
         }
 

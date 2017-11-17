@@ -23,12 +23,8 @@ namespace StockMarketServer {
                 if (MainTimer.Elapsed.Seconds > 1) {
                     //Run sever tick
                     if (TraderTimer.Elapsed.Seconds > 30) {
-                        new Thread(() =>
-                        {
-                            Thread.CurrentThread.IsBackground = true;
-                            AlgoTraderManager.RunTrader();
-                            Console.WriteLine("Traders Run");
-                        }).Start();
+                        Task.Factory.StartNew(() => AlgoTraderManager.RunTrader());
+                        Console.WriteLine("Traders Run");
                         TraderTimer.Reset();
                     }
                     Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  Tick Started");
@@ -42,7 +38,8 @@ namespace StockMarketServer {
                     if (i > 20) {
                         Console.Clear();
                         i = 0;
-;                    }
+                        ;
+                    }
                 }
             }
         }

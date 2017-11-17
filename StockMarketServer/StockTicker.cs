@@ -34,13 +34,13 @@ namespace StockMarketServer {
                 DataBaseHandler.SetData("UPDATE Stock SET HighToday = CurrentPrice WHERE CurrentPrice > HighToday");
                 DataBaseHandler.SetData("INSERT INTO PricingHistory (Price, StockName) VALUES (" + NewPrice + ", '" + s.StockName + "')");
                 if (PriceHistoryCleaner) {
-                    PricingThinner(s.StockName);
+                    Task.Factory.StartNew(() =>PricingThinner(s.StockName, new ThreadDataBaseHandler()));
                     TimingManager.PricingTimer.Restart();
                 }
             }
         }
-        static void PricingThinner(string StockName) {
-            MySqlDataReader reader = DataBaseHandler.GetData(string.Format("SELECT Time From PricingHistory WHERE StockName = '{0}' AND Time < '{1}' ORDER BY Time ASC", StockName, DateTime.Now.AddSeconds(-10).ToString("yyyy-MM-dd HH:mm:ss")));
+        static void PricingThinner(string StockName, ThreadDataBaseHandler threadDataBaseHandler) {
+            MySqlDataReader reader = threadDataBaseHandler.GetData(string.Format("SELECT Time From PricingHistory WHERE StockName = '{0}' AND Time < '{1}' ORDER BY Time ASC", StockName, DateTime.Now.AddSeconds(-10).ToString("yyyy-MM-dd HH:mm:ss")));
             List<DateTime> LastHour = new List<DateTime>();
             List<DateTime> Last12Hours = new List<DateTime>();
             List<DateTime> LastDay = new List<DateTime>();
@@ -138,7 +138,7 @@ namespace StockMarketServer {
                 }
             }
             for (int i = 0; i < ToBeDeleted.Count; i++) {
-                DataBaseHandler.SetData("DELETE FROM PricingHistory WHERE StockName = '" + StockName + "' AND Time = '" + ToBeDeleted[i].ToString("yyyy-MM-dd HH:mm:ss") + "'");
+                threadDataBaseHandler.SetData("DELETE FROM PricingHistory WHERE StockName = '" + StockName + "' AND Time = '" + ToBeDeleted[i].ToString("yyyy-MM-dd HH:mm:ss") + "'");
             }
         }
 

@@ -1,22 +1,28 @@
-﻿using MySql.Data.MySqlClient;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MySql.Data.MySqlClient;
+using System.Threading;
 
 namespace StockMarketServer {
-    class DataBaseHandler {
-        public static string myConnectionString = "server=localhost;database=stockmarket;uid=Sam;pwd=230999;Convert Zero Datetime=True";
-        public static MySqlConnection sqlCon = new MySqlConnection(myConnectionString);
+    class ThreadDataBaseHandler {
+        public static string myConnectionString = DataBaseHandler.myConnectionString;
+        public MySqlConnection sqlCon = new MySqlConnection(myConnectionString);
 
-        public static int UserID { get { return 1; } }
+        public static int UserID { get { return DataBaseHandler.UserID; } }
 
-        public static void StartServer() {
+        public  void StartServer() {
             OpenConnection();
         }
+        public void CloseCon() {
+            try {
+                sqlCon.Close();
+            } catch { }
+        }
 
-        public static MySqlDataReader GetData(string command) {
+        public MySqlDataReader GetData(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             MySqlDataReader reader;
@@ -25,13 +31,13 @@ namespace StockMarketServer {
         }
 
 
-        public static void SetData(string command) {
+        public  void SetData(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             com.ExecuteNonQuery();
         }
 
-        public static int GetCount(string command) {
+        public  int GetCount(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             string t = com.ExecuteScalar().ToString();
@@ -42,7 +48,7 @@ namespace StockMarketServer {
             }
         }
 
-        public static double GetCountDouble(string command) {
+        public  double GetCountDouble(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             string t = com.ExecuteScalar().ToString();
@@ -53,7 +59,7 @@ namespace StockMarketServer {
             }
         }
 
-        static void ReadyConnection() {
+         void ReadyConnection() {
             try {
                 sqlCon.Close();
             } catch { }
@@ -61,16 +67,12 @@ namespace StockMarketServer {
         }
 
 
-        private static void OpenConnection() {
+        private  void OpenConnection() {
             for (int i = 0; i < 10; i++) {
                 try {
-                    sqlCon.Open();
+                sqlCon.Open();
                     break;
                 } catch {
-                    if (i == 9) {
-                        Console.WriteLine("Failed to connect to database");
-                        throw new Exception("Failed to connect to database");
-                    }
                 }
             }
         }

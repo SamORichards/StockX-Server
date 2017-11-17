@@ -11,27 +11,28 @@ namespace StockMarketServer {
     public enum Stance { ShortTermLong, ShortTermShort }
     class AlgorithmsTrader1 : AlgoTrader {
         DateTime LastTurn;
-        int UserID;
         string TargetStock;
         public List<StockTurn> StockTurns = new List<StockTurn>();
         List<MarketStance> stances = new List<MarketStance>();
 
-        public double ShortTermShortRequirement { get; private set; }
-        public double ShortTermLongRequirement { get; private set; }
+
+        public double ShortRequirement { get; private set; }
+        public double LongRequirement { get; private set; }
         public int MinAmount { get; private set; }
         public int MaxAmount { get; private set; }
         public double Aggression { get; private set; }
-
+        ThreadDataBaseHandler threadDataBaseHandler { get { return AlgoTraderManager.threadDataBaseHandler; } }
 
         //Trader Description
         //Takes a look at last two cycles
         //establishes trend
         //purchases or sell depending on position eg int or short
-        public AlgorithmsTrader1(string target, int ClientID, double ShortTermShortRequirement, double ShortTermLongRequirement, int MinAmount, int MaxAmount, double Aggresion) {
+        public AlgorithmsTrader1(int ID, string target, int ClientID, double ShortTermShortRequirement, double ShortTermLongRequirement, int MinAmount, int MaxAmount, double Aggresion) {
+            this.ID = ID;
             TargetStock = target;
             UserID = ClientID;
-            this.ShortTermShortRequirement = ShortTermShortRequirement;
-            this.ShortTermLongRequirement = ShortTermLongRequirement;
+            this.ShortRequirement = ShortTermShortRequirement;
+            this.LongRequirement = ShortTermLongRequirement;
             this.MinAmount = MinAmount;
             this.MaxAmount = MaxAmount;
             this.Aggression = Aggression;
@@ -40,12 +41,13 @@ namespace StockMarketServer {
         public override void RunTurn() {
             base.RunTurn();
             string s = "SELECT Price FROM Trades WHERE Time > '" + LastTurn.ToString("yyyy-MM-dd HH:mm:ss") + "' AND StockName = '" + TargetStock + "'";
-            MySqlDataReader reader = DataBaseHandlerAlgo.GetData(s);
+            MySqlDataReader reader = threadDataBaseHandler.GetData(s);
             //Console.WriteLine(s);
             List<double> Trades = new List<double>();
             while (reader.Read()) {
                 Trades.Add((double)reader["Price"]);
             }
+            threadDataBaseHandler.CloseCon();
             if (Trades.Count == 0) {
                 return;
             }
@@ -59,10 +61,12 @@ namespace StockMarketServer {
             }
             stances.RemoveAll((MarketStance ms) => ms.isCompleted);
             LastTurn = DateTime.Now;
+            threadDataBaseHandler.CloseCon();
         }
+
         void CreateNewStance(bool ShortTerm) {
             if (StockTurns[StockTurns.Count - 1].AveragePrice < 1f) {
-                new MarketStance(Stance.ShortTermLong, 1000, UserID, TargetStock, this);
+                new MarketStance(Stance.ShortTermLong, 1000, UserID, TargetStock, this, new ThreadDataBaseHandler());
             }
             if (ShortTerm) {
                 if (StockTurns.Count < 4) {
@@ -73,10 +77,10 @@ namespace StockMarketServer {
                     TotalLast3Turns += (int)StockTurns[StockTurns.Count - i].Trend + 1;
                 }
                 double AverageLast3Turns = (double)TotalLast3Turns / 3f;
-                if (AverageLast3Turns <= ShortTermLongRequirement) {//1.6f
-                    stances.Add(new MarketStance(Stance.ShortTermLong, MathsHelper.Lerp(MinAmount, MaxAmount, 1f - (AverageLast3Turns / ShortTermLongRequirement) + Aggression), UserID, TargetStock, this));
-                } else if (AverageLast3Turns >= ShortTermShortRequirement) {//2.4f
-                    stances.Add(new MarketStance(Stance.ShortTermShort, MathsHelper.Lerp(MinAmount, MaxAmount, (AverageLast3Turns / ShortTermLongRequirement) + Aggression), UserID, TargetStock, this));
+                if (AverageLast3Turns <= LongRequirement) {//1.6f
+                    stances.Add(new MarketStance(Stance.ShortTermLong, MathsHelper.Lerp(MinAmount, MaxAmount, 1f - (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, new ThreadDataBaseHandler()));
+                } else if (AverageLast3Turns >= ShortRequirement) {//2.4f
+                    stances.Add(new MarketStance(Stance.ShortTermShort, MathsHelper.Lerp(MinAmount, MaxAmount, (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, new ThreadDataBaseHandler()));
                 }
             }
         }
@@ -93,14 +97,16 @@ namespace StockMarketServer {
             string TargetStock;
             DateTime StartTime;
             int RequiredTime;
+            ThreadDataBaseHandler threadDataBaseHandler;
 
-            public MarketStance(Stance s, int Quanity, int ClientID, string TargetStock, AlgoTrader owner) {
+            public MarketStance(Stance s, int Quanity, int ClientID, string TargetStock, AlgoTrader owner, ThreadDataBaseHandler threadDataBaseHandler) {
+                this.threadDataBaseHandler = threadDataBaseHandler;
                 stance = s;
                 Owner = owner;
                 client = ClientID;
                 this.TargetStock = TargetStock;
                 StartTime = DateTime.Now;
-                double CurrentPrice = DataBaseHandlerAlgo.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + this.TargetStock + "'");
+                double CurrentPrice = threadDataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + this.TargetStock + "'");
                 CurrentPrice = Math.Round(CurrentPrice, 2);
                 switch (stance) {
                     case Stance.ShortTermLong:
@@ -118,26 +124,27 @@ namespace StockMarketServer {
                         ShortTermShort(Quanity, CurrentPrice);
                         break;
                 }
+                threadDataBaseHandler.CloseCon();
             }
 
             private void ShortTermShort(int Quanity, double Price) {
-                DataBaseHandlerAlgo.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.offer, Price, client, TargetStock, Quanity));
+                threadDataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.offer, Price, client, TargetStock, Quanity));
                 Console.WriteLine("Places short with " + Quanity);
             }
 
             void ShortTermLong(int Quanity, double Price) {
-                DataBaseHandlerAlgo.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.bid, Price, client, TargetStock, Quanity));
+                threadDataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.bid, Price, client, TargetStock, Quanity));
                 Console.WriteLine("Places Long with " + Quanity);
             }
 
             public void RunTurn() {
-                double CurrentPrice = DataBaseHandlerAlgo.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + TargetStock + "'");
+                double CurrentPrice = threadDataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + TargetStock + "'");
                 TimeSpan TimeTaken = DateTime.Now - StartTime;
                 CurrentPrice = Math.Round(CurrentPrice, 2);
                 switch (stance) {
                     case Stance.ShortTermLong:
                         if ((CurrentPrice >= SuccessPrice || CurrentPrice < FailurePrice) && !OfferPlaced && TimeTaken.TotalMinutes > RequiredTime) {
-                            DataBaseHandlerAlgo.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.offer, CurrentPrice, client, TargetStock, Quanity));
+                            threadDataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.offer, CurrentPrice, client, TargetStock, Quanity));
                             OfferPlaced = true;
                             isCompleted = true;
                             Console.WriteLine("Finished long with " + Quanity);
@@ -145,7 +152,7 @@ namespace StockMarketServer {
                         break;
                     case Stance.ShortTermShort:
                         if ((CurrentPrice <= SuccessPrice || CurrentPrice > FailurePrice) && !OfferPlaced && TimeTaken.TotalMinutes > RequiredTime) {
-                            DataBaseHandlerAlgo.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.bid, CurrentPrice, client, TargetStock, Quanity));
+                            threadDataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.bid, CurrentPrice, client, TargetStock, Quanity));
                             OfferPlaced = true;
                             isCompleted = true;
                             Console.WriteLine("Finished short with " + Quanity);
