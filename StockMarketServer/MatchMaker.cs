@@ -9,8 +9,8 @@ namespace StockMarketServer {
     class MatchMaker {
         ThreadDataBaseHandler threadDataBaseHandler;
 
-        public async void RunMatchMaker(string s, ThreadDataBaseHandler localThreadDataBaseHandler) {
-            threadDataBaseHandler = localThreadDataBaseHandler;
+        public async void RunMatchMaker(string s, int ThreadCounter) {
+            threadDataBaseHandler = Pool.DataBaseHandlers[ThreadCounter];
             MySqlDataReader BidPoolReader = threadDataBaseHandler.GetData("SELECT DISTINCT Price FROM Pool WHERE Type = 0 AND StockName = '" + s + "' ORDER BY Price ASC");
             List<double> BidPriceLevels = new List<double>();
             while (BidPoolReader.Read()) {
@@ -101,7 +101,6 @@ namespace StockMarketServer {
                 }
             }
             threadDataBaseHandler.CloseCon();
-            threadDataBaseHandler = null;
         }
 
 
