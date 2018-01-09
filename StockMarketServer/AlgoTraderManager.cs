@@ -52,6 +52,7 @@ namespace StockMarketServer {
             }
             BasicTraders();
             TimingManager.TraderTimer.Start();
+            Console.WriteLine("Traders Completed");
         }
         class Trader {
             public int TraderID;

@@ -18,11 +18,13 @@ namespace StockMarketServer {
             }
             Task[] tasks = new Task[Stocks.Count];
             foreach (string s in Stocks) {
-                int i = Stocks.FindIndex((t) => t == s);
+                int i = Stocks.FindIndex((e) => e == s);
                 while (i > DataBaseHandlers.Count - 1) {
                     DataBaseHandlers.Add(new ThreadDataBaseHandler());
                 }
-                tasks[i] = Task.Factory.StartNew(() => new MatchMaker().RunMatchMaker(s, i));
+                Task t = new Task(() => new MatchMaker().RunMatchMaker(s, i));
+                t.Start();
+                tasks[i] = t;
             }
             Task.WaitAll(tasks);
             DataBaseHandler.SetData("UPDATE Pool SET TurnsInPool = TurnsInPool + 1");

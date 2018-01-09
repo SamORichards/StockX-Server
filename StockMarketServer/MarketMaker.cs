@@ -24,6 +24,7 @@ namespace StockMarketServer {
                 CheckStockLevels();
                 TurnCounter = 0;
             }
+            Console.WriteLine("Items in Queue is " + Queue.Count);
             for (int i = 0; i < Queue.Count; i++) {
                 Queue[i].TurnsInPool++;
                 if (Queue[i].Quanity <= 0) {
@@ -76,7 +77,7 @@ namespace StockMarketServer {
                 //TODO: Count how many times takes and maybe cancel transaction if can't be completed
                 double Price = DataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + job.bidAndOffer.StockName + "'");
                 DataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.bid, Math.Round(Price, 2) + 1.5, clientID, job.bidAndOffer.StockName, job.Quanity - StocksAvailable));
-                Console.WriteLine(job.Quanity - StocksAvailable);
+                //Console.WriteLine(job.Quanity - StocksAvailable);
                 BidsAndOffers offer = new BidsAndOffers(true, DateTime.Now, job.bidAndOffer.Price, clientID, job.bidAndOffer.StockName, StocksAvailable, 0);
                 TradeManager.CreateTrade(ref offer, ref job.bidAndOffer, job.Quanity - StocksAvailable, threadDataBaseHandler);
             }
