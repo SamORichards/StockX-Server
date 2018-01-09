@@ -12,10 +12,6 @@ namespace StockMarketServer {
 
         public static int UserID { get { return 1; } }
 
-        public static void StartServer() {
-            OpenConnection();
-        }
-
         public static MySqlDataReader GetData(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
@@ -53,26 +49,16 @@ namespace StockMarketServer {
             }
         }
 
-        static void ReadyConnection() {
+        public static void ReadyConnection() {
             try {
                 sqlCon.Close();
             } catch { }
-            StartServer();
+            OpenConnection();
         }
 
 
         private static void OpenConnection() {
-            for (int i = 0; i < 10; i++) {
-                try {
-                    sqlCon.Open();
-                    break;
-                } catch {
-                    if (i == 9) {
-                        Console.WriteLine("Failed to connect to database");
-                        throw new Exception("Failed to connect to database");
-                    }
-                }
-            }
+            sqlCon.Open();
         }
     }
 }

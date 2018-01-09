@@ -8,6 +8,7 @@ using MySql.Data.MySqlClient;
 namespace StockMarketServer {
     class StockTicker {
         static int LastDay = 0;
+        static List<ThreadDataBaseHandler> DataBaseHandlers = new List<ThreadDataBaseHandler>();
         public static void RunTicker(bool PriceHistoryCleaner) {
             if (PriceHistoryCleaner) {
                 Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + ": Pricing Saved");
@@ -21,7 +22,11 @@ namespace StockMarketServer {
             while (reader.Read()) {
                 stocks.Add(new Stock((string)reader["StockName"], (double)reader["CurrentPrice"]));
             }
+            int i = 0;
             foreach (Stock s in stocks) {
+                while (i > DataBaseHandlers.Count - 1) {
+                    DataBaseHandlers.Add(new ThreadDataBaseHandler());
+                }
                 int NumberOfBids = DataBaseHandler.GetCount("SELECT SUM(Quantity) FROM Pool WHERE Type = 0 AND StockName = '" + s.StockName + "'  AND TurnsInPool = 0");
                 int NumberOfOffers = DataBaseHandler.GetCount("SELECT SUM(Quantity) FROM Pool WHERE Type = 1 AND StockName = '" + s.StockName + "'  AND TurnsInPool = 0");
                 long StocksInCirculation = DataBaseHandler.GetCount("SELECT SUM(Quantity) FROM Inventories WHERE StockName = '" + s.StockName + "'");
@@ -34,9 +39,10 @@ namespace StockMarketServer {
                 DataBaseHandler.SetData("UPDATE Stock SET HighToday = CurrentPrice WHERE CurrentPrice > HighToday");
                 DataBaseHandler.SetData("INSERT INTO PricingHistory (Price, StockName) VALUES (" + NewPrice + ", '" + s.StockName + "')");
                 if (PriceHistoryCleaner) {
-                    Task.Factory.StartNew(() =>PricingThinner(s.StockName, new ThreadDataBaseHandler()));
+                    Task.Factory.StartNew(() =>PricingThinner(s.StockName, DataBaseHandlers[i]));
                     TimingManager.PricingTimer.Restart();
                 }
+                i++;
             }
         }
         static void PricingThinner(string StockName, ThreadDataBaseHandler threadDataBaseHandler) {
@@ -153,7 +159,7 @@ namespace StockMarketServer {
 
         private static double UpdateStockPrice(string StockName, double startPrice, int numOfBuyers, int numOfOffers, long totalStocksInCirculation) {
             //Console.WriteLine("{0}: The Number Of Bids is {1}, and the Number Of Offers is: {2}", StockName, numOfBuyers, numOfOffers);
-            double ChangeInPrice = (((double)(numOfBuyers - numOfOffers) / (double)totalStocksInCirculation) / 10) * startPrice;
+            double ChangeInPrice = (((double)(numOfBuyers - numOfOffers) / (double)totalStocksInCirculation)) * startPrice;
             startPrice += ChangeInPrice;
             //Console.WriteLine("New Price for " + StockName + " is " + startPrice);
             return startPrice;

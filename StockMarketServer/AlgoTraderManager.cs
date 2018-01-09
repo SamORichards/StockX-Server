@@ -48,7 +48,11 @@ namespace StockMarketServer {
                 TradersToDelete.RemoveAt(0);
             }
             foreach (AlgoTrader t in Traders) {
-                t.RunTurn();
+                try {
+                    t.RunTurn();
+                } catch {
+                    Console.WriteLine("Error with DB Connectiom, Will retry next turn");
+                }
             }
             BasicTraders();
             TimingManager.TraderTimer.Start();

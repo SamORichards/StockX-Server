@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 using System.Threading;
+using System.Diagnostics;
 
 namespace StockMarketServer {
     class ThreadDataBaseHandler {
@@ -13,7 +14,7 @@ namespace StockMarketServer {
 
         public static int UserID { get { return DataBaseHandler.UserID; } }
 
-        public  void StartServer() {
+        public void StartServer() {
             OpenConnection();
         }
         public void CloseCon() {
@@ -31,13 +32,13 @@ namespace StockMarketServer {
         }
 
 
-        public  void SetData(string command) {
+        public void SetData(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             com.ExecuteNonQuery();
         }
 
-        public  int GetCount(string command) {
+        public int GetCount(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             string t = com.ExecuteScalar().ToString();
@@ -48,7 +49,7 @@ namespace StockMarketServer {
             }
         }
 
-        public  double GetCountDouble(string command) {
+        public double GetCountDouble(string command) {
             ReadyConnection();
             MySqlCommand com = new MySqlCommand(command, sqlCon);
             string t = com.ExecuteScalar().ToString();
@@ -59,7 +60,7 @@ namespace StockMarketServer {
             }
         }
 
-         void ReadyConnection() {
+        void ReadyConnection() {
             try {
                 sqlCon.Close();
             } catch { }
@@ -67,14 +68,8 @@ namespace StockMarketServer {
         }
 
 
-        private  void OpenConnection() {
-            for (int i = 0; i < 10; i++) {
-                try {
-                sqlCon.Open();
-                    break;
-                } catch {
-                }
-            }
+        private void OpenConnection() {
+            sqlCon.Open();
         }
     }
 }

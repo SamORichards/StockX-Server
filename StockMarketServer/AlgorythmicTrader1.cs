@@ -66,7 +66,7 @@ namespace StockMarketServer {
 
         void CreateNewStance(bool ShortTerm) {
             if (StockTurns[StockTurns.Count - 1].AveragePrice < 1f) {
-                new MarketStance(Stance.ShortTermLong, 1000, UserID, TargetStock, this, new ThreadDataBaseHandler());
+                new MarketStance(Stance.ShortTermLong, 1000, UserID, TargetStock, this, threadDataBaseHandler);
             }
             if (ShortTerm) {
                 if (StockTurns.Count < 4) {
@@ -78,9 +78,9 @@ namespace StockMarketServer {
                 }
                 double AverageLast3Turns = (double)TotalLast3Turns / 3f;
                 if (AverageLast3Turns <= LongRequirement) {//1.6f
-                    stances.Add(new MarketStance(Stance.ShortTermLong, MathsHelper.Lerp(MinAmount, MaxAmount, 1f - (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, new ThreadDataBaseHandler()));
+                    stances.Add(new MarketStance(Stance.ShortTermLong, MathsHelper.Lerp(MinAmount, MaxAmount, 1f - (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, threadDataBaseHandler));
                 } else if (AverageLast3Turns >= ShortRequirement) {//2.4f
-                    stances.Add(new MarketStance(Stance.ShortTermShort, MathsHelper.Lerp(MinAmount, MaxAmount, (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, new ThreadDataBaseHandler()));
+                    stances.Add(new MarketStance(Stance.ShortTermShort, MathsHelper.Lerp(MinAmount, MaxAmount, (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, threadDataBaseHandler));
                 }
             }
         }
