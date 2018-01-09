@@ -25,6 +25,10 @@ namespace StockMarketServer {
                 TurnCounter = 0;
             }
             Console.WriteLine("Items in Queue is " + Queue.Count);
+            while (Queue.Count > 100) {
+                Queue = Queue.OrderByDescending((w) => w.TurnsInPool).ToList();
+                Queue.RemoveAt(0);
+            }
             for (int i = 0; i < Queue.Count; i++) {
                 Queue[i].TurnsInPool++;
                 if (Queue[i].Quanity <= 0) {
