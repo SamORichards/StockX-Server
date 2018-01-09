@@ -20,7 +20,7 @@ namespace StockMarketServer {
             return minValue + (next * (maxValue - minValue));
         }
 
-        public static void RunTrader() {
+        public static async void RunTrader() {
             MySqlDataReader reader = threadDataBaseHandler.GetData("SELECT ID FROM AlgoTrader");
             List<int> TradersInDB = new List<int>();
             List<int> TradersToDelete = new List<int>();

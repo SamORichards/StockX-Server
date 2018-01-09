@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace StockMarketServer {
     class Pool {
+        public static List<ThreadDataBaseHandler> DataBaseHandlers = new List<ThreadDataBaseHandler>();
         public static void RunPool() {
             DataBaseHandler.SetData("DELETE FROM Pool WHERE Quantity <= 0");
             MySqlDataReader reader = DataBaseHandler.GetData("SELECT StockName FROM Stock");
@@ -15,12 +16,18 @@ namespace StockMarketServer {
             while (reader.Read()) {
                 Stocks.Add((string)reader["StockName"]);
             }
+            Task[] tasks = new Task[Stocks.Count];
             foreach (string s in Stocks) {
-                Task.Factory.StartNew(() => new MatchMaker().RunMatchMaker(s, new ThreadDataBaseHandler()));
+                int i = Stocks.FindIndex((t) => t == s);
+                while (i > DataBaseHandlers.Count - 1) {
+                    DataBaseHandlers.Add(new ThreadDataBaseHandler());
+                }
+                tasks[i] = Task.Factory.StartNew(() => new MatchMaker().RunMatchMaker(s, i));
             }
+            Task.WaitAll(tasks);
             DataBaseHandler.SetData("UPDATE Pool SET TurnsInPool = TurnsInPool + 1");
             MySqlDataReader Reader = DataBaseHandler.GetData("SELECT * FROM Pool WHERE TurnsInPool = 30");
-            List <BidsAndOffers> bidsAndOffers = new List<BidsAndOffers>();
+            List<BidsAndOffers> bidsAndOffers = new List<BidsAndOffers>();
             while (Reader.Read()) {
                 bidsAndOffers.Add(new BidsAndOffers((bool)Reader["Type"], (DateTime)Reader["TimePlaced"], (double)Reader["Price"], (int)Reader["User"], (string)Reader["StockName"], (int)Reader["Quantity"], (int)Reader["TurnsInPool"]));
             }

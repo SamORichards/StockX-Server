@@ -18,11 +18,12 @@ namespace StockMarketServer {
             PricingTimer.Start();
             TraderTimer.Start();
             int i = 0;
+            Task t = Task.Factory.StartNew(() => AlgoTraderManager.RunTrader());
             while (true) {
                 if (MainTimer.Elapsed.Seconds > 1) {
                     //Run sever tick
-                    if (TraderTimer.Elapsed.Seconds > 30) {
-                        Task.Factory.StartNew(() => AlgoTraderManager.RunTrader());
+                    if (TraderTimer.Elapsed.Seconds > 30 && t.IsCompleted) {
+                        t = Task.Factory.StartNew(() => AlgoTraderManager.RunTrader());
                         Console.WriteLine("Traders Run");
                         TraderTimer.Reset();
                     }
