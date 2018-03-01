@@ -58,11 +58,16 @@ namespace StockMarketServer {
             }
 			//Now we have all the correct traders stored locally we can run a turn on them
             foreach (AlgoTrader t in Traders) {
-                t.RunTurn();
+                try {
+                    t.RunTurn();
+                } catch {
+                    Console.WriteLine("Error with DB Connectiom, Will retry next turn");
+                }
             }
 			//Basic traders are the ones create by the user which just excute traders if certain criteria is met
 			BasicTraders();
             TimingManager.TraderTimer.Start();
+            Console.WriteLine("Traders Completed");
         }
         class Trader {
             public int TraderID;

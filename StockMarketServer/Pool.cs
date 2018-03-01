@@ -21,12 +21,14 @@ namespace StockMarketServer {
             //Create a list of task for multi treading
             Task[] tasks = new Task[Stocks.Count];
             foreach (string s in Stocks) {
-                int i = Stocks.FindIndex((t) => t == s);
-                //Make sure there are enough db handlers avialable
+				//Make sure there are enough db handlers avialable
+				int i = Stocks.FindIndex((e) => e == s);
                 while (i > DataBaseHandlers.Count - 1) {
                     DataBaseHandlers.Add(new ThreadDataBaseHandler());
                 }
-                tasks[i] = Task.Factory.StartNew(() => new MatchMaker().RunMatchMaker(s, i));
+                Task t = new Task(() => new MatchMaker().RunMatchMaker(s, i));
+                t.Start();
+                tasks[i] = t;
             }
             Task.WaitAll(tasks);
             DataBaseHandler.SetData("UPDATE Pool SET TurnsInPool = TurnsInPool + 1");

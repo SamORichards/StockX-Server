@@ -70,7 +70,7 @@ namespace StockMarketServer {
 			//If the price of the stock is too low then invest in the stock because at this price
 			//level it will likely start increase soon
             if (StockTurns[StockTurns.Count - 1].AveragePrice < 1f) {
-                new MarketStance(Stance.ShortTermLong, 1000, UserID, TargetStock, this, new ThreadDataBaseHandler());
+                new MarketStance(Stance.ShortTermLong, 1000, UserID, TargetStock, this, threadDataBaseHandler);
             }
 			//At the moment this algo trader only does short term trade stances so this will always be true
             if (ShortTerm) {
@@ -87,9 +87,9 @@ namespace StockMarketServer {
 				//If average is large then the stock price is falling
 				//If it is small then it is rising
                 if (AverageLast3Turns <= LongRequirement) {//1.6f
-                    stances.Add(new MarketStance(Stance.ShortTermLong, MathsHelper.Lerp(MinAmount, MaxAmount, 1f - (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, new ThreadDataBaseHandler()));
+                    stances.Add(new MarketStance(Stance.ShortTermLong, MathsHelper.Lerp(MinAmount, MaxAmount, 1f - (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, threadDataBaseHandler));
                 } else if (AverageLast3Turns >= ShortRequirement) {//2.4f
-                    stances.Add(new MarketStance(Stance.ShortTermShort, MathsHelper.Lerp(MinAmount, MaxAmount, (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, new ThreadDataBaseHandler()));
+                    stances.Add(new MarketStance(Stance.ShortTermShort, MathsHelper.Lerp(MinAmount, MaxAmount, (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, threadDataBaseHandler));
                 }
             }
         }
