@@ -23,11 +23,20 @@ namespace StockMarketServer {
         public double Aggression { get; private set; }
         ThreadDataBaseHandler threadDataBaseHandler { get { return AlgoTraderManager.threadDataBaseHandler; } }
 
-        //Trader Description
-        //Takes a look at last two cycles
-        //establishes trend
-        //purchases or sell depending on position eg int or short
-        public AlgorithmsTrader1(int ID, string target, int ClientID, double ShortTermShortRequirement, double ShortTermLongRequirement, int MinAmount, int MaxAmount, double Aggresion) {
+		/// <summary>/
+		///Takes a look at last two cycles
+		///establishes trend
+		///purchases or sell depending on position eg int or short
+		/// </summary>
+		/// <param name="ID"> Traders ID in manager </param>
+		/// <param name="target"> Stock this trader is targeting </param>
+		/// <param name="ClientID"> The ClientID who balance and invetory this trader will use </param>
+		/// <param name="ShortTermShortRequirement"> The size of the trend need for the trader to take a stance on a short term short </param>
+		/// <param name="ShortTermLongRequirement"> The size of the trend need for the trader to take a stance on a short term long </param>
+		/// <param name="MinAmount"> Minimum amount of stocks per stance </param>
+		/// <param name="MaxAmount"> Maximum amount of stocks per stance </param>
+		/// <param name="Aggresion"> The aggresion the percentage of max stock the trader will assign per stance </param>
+		public AlgorithmsTrader1(int ID, string target, int ClientID, double ShortTermShortRequirement, double ShortTermLongRequirement, int MinAmount, int MaxAmount, double Aggresion) {
             this.ID = ID;
             TargetStock = target;
             UserID = ClientID;
@@ -107,7 +116,7 @@ namespace StockMarketServer {
             DateTime StartTime;
             int RequiredTime;
             ThreadDataBaseHandler threadDataBaseHandler;
-
+			//This class now stores the information need for the stance and is called every turn to check it vs its conditions for success and failure
             public MarketStance(Stance s, int Quanity, int ClientID, string TargetStock, AlgoTrader owner, ThreadDataBaseHandler threadDataBaseHandler) {
                 this.threadDataBaseHandler = threadDataBaseHandler;
                 stance = s;
@@ -119,6 +128,7 @@ namespace StockMarketServer {
                 CurrentPrice = Math.Round(CurrentPrice, 2);
                 switch (stance) {
                     case Stance.ShortTermLong:
+						//For a long the trader believes the market will go up so success price if above current price
                         this.Quanity = Quanity;
                         SuccessPrice = CurrentPrice + 0.02f;
                         FailurePrice = CurrentPrice - 0.01f;
@@ -126,21 +136,25 @@ namespace StockMarketServer {
                         ShortTermLong(Quanity, CurrentPrice);
                         break;
                     case Stance.ShortTermShort:
-                        this.Quanity = Quanity;
+						//For a short the trader believes the market will go doen so success price if below current price
+						this.Quanity = Quanity;
                         SuccessPrice = CurrentPrice - 0.02f;
                         FailurePrice = CurrentPrice + 0.01f;
                         RequiredTime = 5;
                         ShortTermShort(Quanity, CurrentPrice);
                         break;
                 }
+				//Close DB thread for other parts of the program to be free to connect to DB
                 threadDataBaseHandler.CloseCon();
             }
 
+			//Place offer into pool
             private void ShortTermShort(int Quanity, double Price) {
                 threadDataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.offer, Price, client, TargetStock, Quanity));
                 Console.WriteLine("Places short with " + Quanity);
             }
 
+			//Place bid into pool
             void ShortTermLong(int Quanity, double Price) {
                 threadDataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.bid, Price, client, TargetStock, Quanity));
                 Console.WriteLine("Places Long with " + Quanity);
@@ -151,6 +165,7 @@ namespace StockMarketServer {
                 TimeSpan TimeTaken = DateTime.Now - StartTime;
                 CurrentPrice = Math.Round(CurrentPrice, 2);
                 switch (stance) {
+					//Check stance against conditions then excute the completion of the stance
                     case Stance.ShortTermLong:
                         if ((CurrentPrice >= SuccessPrice || CurrentPrice < FailurePrice) && !OfferPlaced && TimeTaken.TotalMinutes > RequiredTime) {
                             threadDataBaseHandler.SetData(string.Format("INSERT INTO Pool (Type, Price, User, StockName, Quantity) VALUES ({0}, {1}, {2}, '{3}', {4})", (int)BidOffer.offer, CurrentPrice, client, TargetStock, Quanity));
