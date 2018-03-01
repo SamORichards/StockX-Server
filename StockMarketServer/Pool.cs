@@ -10,15 +10,19 @@ namespace StockMarketServer {
     class Pool {
         public static List<ThreadDataBaseHandler> DataBaseHandlers = new List<ThreadDataBaseHandler>();
         public static void RunPool() {
+            //Clears all empty bids and offers from pool
             DataBaseHandler.SetData("DELETE FROM Pool WHERE Quantity <= 0");
+            //Get all the stocks so we can assign match makers
             MySqlDataReader reader = DataBaseHandler.GetData("SELECT StockName FROM Stock");
             List<string> Stocks = new List<string>();
             while (reader.Read()) {
                 Stocks.Add((string)reader["StockName"]);
             }
+            //Create a list of task for multi treading
             Task[] tasks = new Task[Stocks.Count];
             foreach (string s in Stocks) {
                 int i = Stocks.FindIndex((t) => t == s);
+                //Make sure there are enough db handlers avialable
                 while (i > DataBaseHandlers.Count - 1) {
                     DataBaseHandlers.Add(new ThreadDataBaseHandler());
                 }

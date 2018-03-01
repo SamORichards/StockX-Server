@@ -38,11 +38,11 @@ namespace StockMarketServer {
             this.Aggression = Aggression;
         }
 
+		//Called by AlgoTraderManager
         public override void RunTurn() {
-            base.RunTurn();
+			//Grab all the trades since last turn
             string s = "SELECT Price FROM Trades WHERE Time > '" + LastTurn.ToString("yyyy-MM-dd HH:mm:ss") + "' AND StockName = '" + TargetStock + "'";
             MySqlDataReader reader = threadDataBaseHandler.GetData(s);
-            //Console.WriteLine(s);
             List<double> Trades = new List<double>();
             while (reader.Read()) {
                 Trades.Add((double)reader["Price"]);
@@ -51,7 +51,9 @@ namespace StockMarketServer {
             if (Trades.Count == 0) {
                 return;
             }
+			//Turn the trades into a stock turn and it into the list
             StockTurns.Add(new StockTurn(Trades));
+			//Create a short term stance
             CreateNewStance(true);
             if (StockTurns.Count >= 150) {
                 StockTurns.RemoveAt(0);
@@ -65,18 +67,25 @@ namespace StockMarketServer {
         }
 
         void CreateNewStance(bool ShortTerm) {
+			//If the price of the stock is too low then invest in the stock because at this price
+			//level it will likely start increase soon
             if (StockTurns[StockTurns.Count - 1].AveragePrice < 1f) {
                 new MarketStance(Stance.ShortTermLong, 1000, UserID, TargetStock, this, new ThreadDataBaseHandler());
             }
+			//At the moment this algo trader only does short term trade stances so this will always be true
             if (ShortTerm) {
+				// Need atleast 4 turns in order to take a stance
                 if (StockTurns.Count < 4) {
                     return;
                 }
+				//Sum the trend of the last three turns using enum cast as int
                 int TotalLast3Turns = 0;
                 for (int i = 1; i <= 3; i++) {
                     TotalLast3Turns += (int)StockTurns[StockTurns.Count - i].Trend + 1;
                 }
                 double AverageLast3Turns = (double)TotalLast3Turns / 3f;
+				//If average is large then the stock price is falling
+				//If it is small then it is rising
                 if (AverageLast3Turns <= LongRequirement) {//1.6f
                     stances.Add(new MarketStance(Stance.ShortTermLong, MathsHelper.Lerp(MinAmount, MaxAmount, 1f - (AverageLast3Turns / LongRequirement) + Aggression), UserID, TargetStock, this, new ThreadDataBaseHandler()));
                 } else if (AverageLast3Turns >= ShortRequirement) {//2.4f
@@ -172,6 +181,7 @@ namespace StockMarketServer {
         public double AveragePrice;
         public Segments Trend;
         public StockTurn(List<double> trades) {
+			//assign a segment (trend) by taking the list of prices from the trades and doing basic trend analysis
             OpeningPrice = trades[0];
             LowPrice = trades.OrderBy((double t) => t).ToList()[0];
             HighPrice = trades.OrderByDescending((double t) => t).ToList()[0];
@@ -182,7 +192,6 @@ namespace StockMarketServer {
             }
             AveragePrice = TotalPrice / (double)trades.Count;
             Trend = AssignSegment();
-            //Console.WriteLine(Trend);
         }
         Segments AssignSegment() {
             if (ClosePrice > OpeningPrice) {
