@@ -26,12 +26,16 @@ namespace StockMarketServer {
                 while (i > DataBaseHandlers.Count - 1) {
                     DataBaseHandlers.Add(new ThreadDataBaseHandler());
                 }
+				//Create a new task which will be added into the queue to be assign a thread
                 Task t = new Task(() => new MatchMaker().RunMatchMaker(s, i));
                 t.Start();
+				//Add the task to list so we can keep track of its progress
                 tasks[i] = t;
             }
+			//Wait until all the task have been complete before we advance
             Task.WaitAll(tasks);
             DataBaseHandler.SetData("UPDATE Pool SET TurnsInPool = TurnsInPool + 1");
+			//If a bid / offer has been in the pool for 30 turns we grab it from the pool assign it to Market Maker
             MySqlDataReader Reader = DataBaseHandler.GetData("SELECT * FROM Pool WHERE TurnsInPool = 30");
             List<BidsAndOffers> bidsAndOffers = new List<BidsAndOffers>();
             while (Reader.Read()) {
@@ -40,8 +44,11 @@ namespace StockMarketServer {
             foreach (BidsAndOffers b in bidsAndOffers) {
                 MarketMaker.AddJob(b);
             }
+			//Delete the bids / offers from the pool that we have now passed to the market maker to complete
             DataBaseHandler.SetData("DELETE FROM Pool WHERE `TurnsInPool` = 30");
+			//Delete trades that are older than a day to reduce the size of the DB
             DataBaseHandler.SetData("DELETE FROM Trades WHERE Time < '" + DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd HH:mm:ss") + "'");
+			//Run the market maker turn
             MarketMaker.RunTurn();
         }
     }

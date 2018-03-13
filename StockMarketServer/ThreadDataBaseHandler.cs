@@ -8,6 +8,12 @@ using System.Threading;
 using System.Diagnostics;
 
 namespace StockMarketServer {
+
+	/// <summary>
+	/// This class is very similar to the DataBaseHandler class however it is not static.
+	/// This is done so that is can be passed out to Multitreaded tasks without the risk
+	/// of race conditions
+	/// </summary>
     class ThreadDataBaseHandler {
         public static string myConnectionString = DataBaseHandler.myConnectionString;
         public MySqlConnection sqlCon = new MySqlConnection(myConnectionString);

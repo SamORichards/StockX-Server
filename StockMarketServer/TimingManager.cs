@@ -14,18 +14,21 @@ namespace StockMarketServer {
         public static Stopwatch PricingTimer = new Stopwatch();
         public static Stopwatch TraderTimer = new Stopwatch();
         static void Main(string[] args) {
+			//Start the connection to the DB
             DataBaseHandler.ReadyConnection();
+			//Start the stopwatch for the different class which have different tick rates
             MainTimer.Start();
             PricingTimer.Start();
             TraderTimer.Start();
             int i = 0;
-            Task t = Task.Factory.StartNew(() => AlgoTraderManager.RunTrader());
-            CancellationTokenSource tCanel = new CancellationTokenSource();
+			//Start the AlgoTraderManager first as it takes a while to initialize
+			Task t = Task.Factory.StartNew(() => AlgoTraderManager.RunTrader());
+			t.Start();
             while (true) {
                 if (MainTimer.Elapsed.Seconds > 1) {
                     //Run sever tick
                     if (TraderTimer.Elapsed.Seconds > 30 && (t.IsCompleted || t.IsCanceled)) {
-                        t = new Task(() => AlgoTraderManager.RunTrader(), tCanel.Token);
+                        t = Task.Factory.StartNew(() => AlgoTraderManager.RunTrader());
                         t.Start();
                         Console.WriteLine("Traders Run");
                         TraderTimer.Reset();
@@ -34,9 +37,8 @@ namespace StockMarketServer {
                     StockTicker.RunTicker(PricingTimer.Elapsed.Seconds >= 15);
                     Pool.RunPool();
                     Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "  Tick Completed");
-                    MainTimer.Stop();
-                    MainTimer.Reset();
-                    MainTimer.Start();
+					MainTimer.Restart();
+					//If there has been twenty ticks the console is cleared
                     i++;
                     if (i > 20) {
                         Console.Clear();
