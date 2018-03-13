@@ -38,8 +38,9 @@ namespace StockMarketServer {
                 DataBaseHandler.SetData("UPDATE Stock SET LowToday = CurrentPrice WHERE CurrentPrice < LowToday");
                 DataBaseHandler.SetData("UPDATE Stock SET HighToday = CurrentPrice WHERE CurrentPrice > HighToday");
                 DataBaseHandler.SetData("INSERT INTO PricingHistory (Price, StockName) VALUES (" + NewPrice + ", '" + s.StockName + "')");
-                if (PriceHistoryCleaner) {
-                    Task.Factory.StartNew(() =>PricingThinner(s.StockName, DataBaseHandlers[i]));
+				if (PriceHistoryCleaner) {
+					ThreadDataBaseHandler threadDataBaseHandler = DataBaseHandlers[i];
+					Task.Factory.StartNew(() =>PricingThinner(s.StockName, threadDataBaseHandler));
                     TimingManager.PricingTimer.Restart();
                 }
                 i++;
