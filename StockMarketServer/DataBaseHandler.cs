@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace StockMarketServer {
     class DataBaseHandler {
-        public static string myConnectionString = "server=localhost;database=stockmarket;uid=admin;pwd=password;Convert Zero Datetime=True";
+        public static string myConnectionString = "server=localhost;database=stockmarket;uid=Sam;pwd=230999;Convert Zero Datetime=True";
         public static MySqlConnection sqlCon = new MySqlConnection(myConnectionString);
 
 		//This is 1 as that is the account number for the admin account in the DB

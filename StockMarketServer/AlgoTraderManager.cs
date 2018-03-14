@@ -9,30 +9,30 @@ namespace StockMarketServer {
     enum MathOperator { Greater, Less }
     enum BuySell { Buy, Sell }
     class AlgoTraderManager {
-		//List of thread database handler class for different class to grab to access the database
-		//This is done to keep track of number of connection to the database to make sure that
-		//it does exceed the limit of the DB server
+        //List of thread database handler class for different class to grab to access the database
+        //This is done to keep track of number of connection to the database to make sure that
+        //it does exceed the limit of the DB server
         public static ThreadDataBaseHandler threadDataBaseHandler = new ThreadDataBaseHandler();
         static List<AlgoTrader> Traders = new List<AlgoTrader>();
 
         static Random _random = new Random();
 
-		//Return a random double between bounds
+        //Return a random double between bounds
         private static double RandomNumberBetween(double minValue, double maxValue) {
             var next = _random.NextDouble();
 
             return minValue + (next * (maxValue - minValue));
         }
 
-		//This method is called from TimingManager and manages the excutions of Algorythemic Traders
+        //This method is called from TimingManager and manages the excutions of Algorythemic Traders
         public static async void RunTrader() {
-			//Get the trader ids from the database
+            //Get the trader ids from the database
             MySqlDataReader reader = threadDataBaseHandler.GetData("SELECT ID FROM AlgoTrader");
             List<int> TradersInDB = new List<int>();
             List<int> TradersToDelete = new List<int>();
-			//Checks which traders we have stored locally
-			//if the id exists in the DB but not in this program them grab from the DB and create local version
-			//else if if it exists in this local version but not in the DB then delete the local instance
+            //Checks which traders we have stored locally
+            //if the id exists in the DB but not in this program them grab from the DB and create local version
+            //else if if it exists in this local version but not in the DB then delete the local instance
             while (reader.Read()) {
                 TradersInDB.Add((int)reader["ID"]);
             }
@@ -42,7 +42,7 @@ namespace StockMarketServer {
                 }
             }
             for (int i = 0; i < TradersInDB.Count; i++) {
-                if (!Traders.Exists((t)=> t.ID == TradersInDB[i])) {
+                if (!Traders.Exists((t) => t.ID == TradersInDB[i])) {
                     reader = threadDataBaseHandler.GetData("SELECT * FROM AlgoTrader WHERE ID = " + TradersInDB[i]);
                     while (reader.Read()) {
                         Traders.Add(new AlgorithmsTrader1(TradersInDB[i], (string)reader["Target"], (int)reader["UserId"], (double)reader["ShortRequirement"], (double)reader["LongRequirement"], (int)reader["MinAmount"], (int)reader["MaxAmount"], (double)reader["Aggresion"]));
@@ -51,12 +51,12 @@ namespace StockMarketServer {
             }
             while (TradersToDelete.Count > 0) {
                 threadDataBaseHandler.SetData("DELETE FROM Users WHERE ID = " + Traders[TradersToDelete[0]].UserID);
-                threadDataBaseHandler.SetData("UPDATE Inventories SET UserID = 1 WHERE UserID = "+ Traders[TradersToDelete[0]].UserID);
+                threadDataBaseHandler.SetData("UPDATE Inventories SET UserID = 1 WHERE UserID = " + Traders[TradersToDelete[0]].UserID);
                 threadDataBaseHandler.SetData("DELETE FROM AlgoTrader WHERE ID = " + Traders[TradersToDelete[0]].ID);
                 Traders.Remove(Traders[TradersToDelete[0]]);
                 TradersToDelete.RemoveAt(0);
             }
-			//Now we have all the correct traders stored locally we can run a turn on them
+            //Now we have all the correct traders stored locally we can run a turn on them
             foreach (AlgoTrader t in Traders) {
                 try {
                     t.RunTurn();
@@ -64,8 +64,8 @@ namespace StockMarketServer {
                     Console.WriteLine("Error with DB Connectiom, Will retry next turn");
                 }
             }
-			//Basic traders are the ones create by the user which just excute traders if certain criteria is met
-			BasicTraders();
+            //Basic traders are the ones create by the user which just excute traders if certain criteria is met
+            BasicTraders();
             TimingManager.TraderTimer.Start();
             Console.WriteLine("Traders Completed");
         }
@@ -87,9 +87,9 @@ namespace StockMarketServer {
         }
         private static void BasicTraders() {
             List<Trader> Traders = new List<Trader>();
-			//Grab the basic traders from the DB
+            //Grab the basic traders from the DB
             MySqlDataReader reader = threadDataBaseHandler.GetData("SELECT * FROM UserAlgoTraders");
-			//Load them into instance of the local class so that we can evaluate them
+            //Load them into instance of the local class so that we can evaluate them
             while (reader.Read()) {
                 Trader trader = new Trader();
                 trader.TraderID = (int)reader["ID"];
@@ -105,25 +105,35 @@ namespace StockMarketServer {
                 Traders.Add(trader);
             }
             List<Trader> TradersToDelete = new List<Trader>();
-			//Now for all of the basic traders stored locally we now evaulute against it condition
+            //Now for all of the basic traders stored locally we now evaulute against it condition
             foreach (Trader trader in Traders) {
+                string TargetName = "";
+                MySqlDataReader mySqlDataReader = threadDataBaseHandler.GetData("SELECT StockName From stock WHERE FullName = '" + trader.action.Target + "'");
+                while (mySqlDataReader.Read()) {
+                    TargetName = (string)mySqlDataReader["StockName"];
+                }
+                string TriggerName = "";
+                mySqlDataReader = threadDataBaseHandler.GetData("SELECT StockName From stock WHERE FullName = '" + trader.Trigger.Target + "'");
+                while (mySqlDataReader.Read()) {
+                    TriggerName = (string)mySqlDataReader["StockName"];
+                }
                 bool TriggersSuccesful = true;
-                    double CurrentPrice = threadDataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + trader.Trigger.Target + "'");
-                    if (trader.Trigger.Operator == MathOperator.Greater) {
-                        if (!(trader.Trigger.Value > CurrentPrice)) {
-                            TriggersSuccesful = false;
-                        }
-                    } else {
-                        if (!(trader.Trigger.Value < CurrentPrice)) {
-                            TriggersSuccesful = false;
-                        }
+                double CurrentPrice = threadDataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + TriggerName + "'");
+                if (trader.Trigger.Operator == MathOperator.Greater) {
+                    if (!(trader.Trigger.Value < CurrentPrice)) {
+                        TriggersSuccesful = false;
                     }
-				//If the condition is met we now excute position set by the user
+                } else {
+                    if (!(trader.Trigger.Value > CurrentPrice)) {
+                        TriggersSuccesful = false;
+                    }
+                }
+                //If the condition is met we now excute position set by the user
                 if (TriggersSuccesful) {
-                    CurrentPrice = threadDataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + trader.action.Target + "'");
-                    threadDataBaseHandler.SetData(string.Format("INSERT INTO Pool(Type, Price, User, StockName, Quantity) VALUES({0}, {1}, {2}, '{3}', {4})", (int)trader.action.BuyOrSell, CurrentPrice, trader.OwnerId, trader.action.Target, trader.action.Quantity));
-                    threadDataBaseHandler.SetData("DELETE FROM AlgoTraders WHERE ID = " + trader.TraderID);
-					//Add to traders to be delete as the basic trader is now complete
+                    CurrentPrice = threadDataBaseHandler.GetCountDouble("SELECT SUM(CurrentPrice) FROM Stock WHERE StockName = '" + TargetName + "'");
+                    threadDataBaseHandler.SetData(string.Format("INSERT INTO Pool(Type, Price, User, StockName, Quantity) VALUES({0}, {1}, {2}, '{3}', {4})", (int)trader.action.BuyOrSell, CurrentPrice, trader.OwnerId, TargetName, trader.action.Quantity));
+                    threadDataBaseHandler.SetData("DELETE FROM AlgoTrader WHERE ID = " + trader.TraderID);
+                    //Add to traders to be delete as the basic trader is now complete
                     TradersToDelete.Add(trader);
                 }
             }
@@ -131,7 +141,7 @@ namespace StockMarketServer {
                 Traders.Remove(t);
             }
             TradersToDelete.Clear();
-			//Close the DB thread to free it up for other parts of the program to use
+            //Close the DB thread to free it up for other parts of the program to use
             threadDataBaseHandler.CloseCon();
         }
     }
